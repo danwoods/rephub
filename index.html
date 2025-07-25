@@ -1,0 +1,1093 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Setlist Manager</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #1a1a1a;
+            color: #e0e0e0;
+            min-height: 100vh;
+        }
+
+        .header {
+            background: #2d2d2d;
+            padding: 1rem 2rem;
+            border-bottom: 1px solid #404040;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .header h1 {
+            color: #4CAF50;
+            font-size: 1.5rem;
+        }
+
+        .header-controls {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: background 0.2s;
+        }
+
+        .btn:hover {
+            background: #45a049;
+        }
+
+        .btn-secondary {
+            background: #666;
+        }
+
+        .btn-secondary:hover {
+            background: #555;
+        }
+
+        .main-container {
+            display: flex;
+            height: calc(100vh - 80px);
+        }
+
+        .sidebar {
+            width: 300px;
+            background: #2d2d2d;
+            border-right: 1px solid #404040;
+            overflow-y: auto;
+            flex-shrink: 0;
+        }
+
+        .sidebar-section {
+            padding: 1rem;
+            border-bottom: 1px solid #404040;
+        }
+
+        .sidebar-section h3 {
+            color: #4CAF50;
+            margin-bottom: 0.5rem;
+            font-size: 1rem;
+        }
+
+        .song-list {
+            list-style: none;
+        }
+
+        .song-item {
+            padding: 0.5rem;
+            cursor: pointer;
+            border-radius: 4px;
+            margin-bottom: 0.25rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .song-item:hover {
+            background: #404040;
+        }
+
+        .song-item.active {
+            background: #4CAF50;
+            color: white;
+        }
+
+        .song-key {
+            font-size: 0.8rem;
+            color: #999;
+            font-weight: normal;
+        }
+
+        .song-item.active .song-key {
+            color: #e0e0e0;
+        }
+
+        .setlist-area {
+            min-height: 200px;
+            border: 2px dashed #404040;
+            border-radius: 4px;
+            padding: 1rem;
+            margin-top: 0.5rem;
+        }
+
+        .setlist-item {
+            background: #404040;
+            padding: 0.5rem;
+            margin-bottom: 0.25rem;
+            border-radius: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: move;
+        }
+
+        .setlist-item:hover {
+            background: #505050;
+        }
+
+        .remove-btn {
+            background: #f44336;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .content-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+
+        .editor-header {
+            background: #333;
+            padding: 1rem;
+            border-bottom: 1px solid #404040;
+            display: flex;
+            justify-content: between;
+            align-items: center;
+        }
+
+        .editor-title {
+            font-size: 1.2rem;
+            color: #4CAF50;
+        }
+
+        .editor-container {
+            flex: 1;
+            display: flex;
+        }
+
+        .editor {
+            flex: 1;
+            background: #1e1e1e;
+            color: #e0e0e0;
+            border: none;
+            padding: 1rem;
+            font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            resize: none;
+            outline: none;
+        }
+
+        .preview {
+            flex: 1;
+            background: #f8f8f8;
+            color: #333;
+            padding: 1rem;
+            overflow-y: auto;
+            border-left: 1px solid #404040;
+        }
+
+        .chord-line {
+            color: #ff6b35;
+            font-weight: bold;
+            font-family: monospace;
+            margin-bottom: 0.25rem;
+        }
+
+        .lyric-line {
+            margin-bottom: 0.5rem;
+        }
+
+        .section-header {
+            font-weight: bold;
+            color: #4CAF50;
+            margin: 1rem 0 0.5rem 0;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 0.25rem;
+        }
+
+        .song-info {
+            background: #e8f5e8;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+        }
+
+        .song-info strong {
+            color: #2e7d32;
+        }
+
+        @media (max-width: 768px) {
+            .main-container {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                width: 100%;
+                height: auto;
+                max-height: 50vh;
+            }
+            
+            .editor-container {
+                flex-direction: column;
+            }
+            
+            .preview {
+                border-left: none;
+                border-top: 1px solid #404040;
+            }
+        }
+
+        .template-select {
+            background: #444;
+            color: #e0e0e0;
+            border: 1px solid #666;
+            padding: 0.5rem;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🎵 Setlist Manager</h1>
+        <div class="header-controls">
+            <button class="btn" onclick="exportSetlist()">Export Setlist</button>
+            <button class="btn" onclick="exportAllSongs()">Export All Songs</button>
+            <button class="btn btn-secondary" onclick="importData()">Import</button>
+        </div>
+    </div>
+
+    <div class="main-container">
+        <div class="sidebar">
+            <div class="sidebar-section">
+                <h3>Songs Library</h3>
+                <ul class="song-list" id="songList"></ul>
+            </div>
+            
+            <div class="sidebar-section">
+                <h3>Current Setlist</h3>
+                <div class="setlist-area" id="setlistArea">
+                    <p style="color: #999; text-align: center;">Drag songs here or click to add</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="content-area">
+            <div class="editor-header">
+                <div class="editor-title" id="editorTitle">Select a song to edit</div>
+                <select class="template-select" id="templateSelect" onchange="loadTemplate()" style="display: none;">
+                    <option value="">Load Template...</option>
+                    <option value="basic">Basic Song</option>
+                    <option value="grateful-dead">Grateful Dead Style</option>
+                    <option value="blues">Blues</option>
+                </select>
+            </div>
+
+            <div class="editor-container">
+                <textarea class="editor" id="editor" placeholder="Select a song from the library to start editing..."></textarea>
+                <div class="preview" id="preview"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Sample song data based on the research
+        const songsData = {
+            "franklins-tower": {
+                title: "Franklin's Tower",
+                key: "A Mixolydian",
+                tempo: "107 BPM",
+                timeSignature: "4/4",
+                content: `# Franklin's Tower
+**Key:** A Mixolydian | **Tempo:** 107 BPM | **Time:** 4/4
+
+## Song Info
+- Main jam section: A - G - D - G (infinite two-bar loop)
+- All sections use same progression
+- Designed for extended jamming (10+ minutes)
+- G chords displaced half a beat for syncopated feel
+
+## Structure
+### Jam Section (repeating)
+\`\`\`
+A       G       D       G
+[Add lyrics here when available]
+\`\`\`
+
+## Performance Notes
+- Perfect for extended guitar solos in A Mixolydian mode
+- Use simple major chords but creates modal sound
+- Signature syncopated groove from displaced G chords`
+            },
+            
+            "quinn-the-eskimo": {
+                title: "Quinn the Eskimo (The Mighty Quinn)",
+                key: "A major",
+                tempo: "88 BPM",
+                timeSignature: "4/4",
+                content: `# Quinn the Eskimo (The Mighty Quinn)
+**Key:** A major | **Tempo:** 88 BPM | **Time:** 4/4
+
+## Song Info
+- Bob Dylan original with simple structure
+- Perfect for jam sessions
+- Alternative keys: C major, G major
+
+## Structure
+### Verse
+\`\`\`
+E       A       E       A
+[Add lyrics here when available]
+\`\`\`
+
+### Chorus
+\`\`\`
+E       B       E
+[Chorus lyrics]
+B       A       E
+[Chorus lyrics continued]
+\`\`\`
+
+### Bridge
+\`\`\`
+E       B       A       E
+[Bridge lyrics]
+\`\`\`
+
+## Performance Notes
+- B chord creates tension before resolving
+- Medium shuffle/folk rock feel`
+            },
+
+            "the-harder-they-come": {
+                title: "The Harder They Come",
+                key: "Db major (orig) / A major / C major",
+                tempo: "100 BPM",
+                timeSignature: "4/4",
+                content: `# The Harder They Come
+**Key:** Db major (original), commonly A major or C major | **Tempo:** 100 BPM | **Time:** 4/4
+
+## Song Info
+- Jimmy Cliff reggae classic
+- Often transposed for easier playing
+- Same progression for verse and chorus
+
+## Structure (A major version)
+### Verse/Chorus
+\`\`\`
+E       D       A       F#m
+[Add lyrics here when available]
+\`\`\`
+
+## Structure (C major version - easier)
+### Verse/Chorus
+\`\`\`
+G       F       C       Am
+[Add lyrics here when available]
+\`\`\`
+
+## Performance Notes
+- Use capo 1st fret for C major version
+- Reggae rhythm emphasizes beats 2 and 4
+- Single progression repeats throughout`
+            },
+
+            "sugaree": {
+                title: "Sugaree",
+                key: "B Mixolydian",
+                tempo: "86-88 BPM",
+                timeSignature: "4/4",
+                content: `# Sugaree
+**Key:** B Mixolydian | **Tempo:** 86-88 BPM | **Time:** 4/4
+
+## Song Info
+- Grateful Dead original using barre chords
+- Mixolydian mode creates dark, bluesy character
+- Popular for extended jams
+
+## Structure
+### Verse
+\`\`\`
+B       E       A       E
+[Add lyrics here when available]
+\`\`\`
+
+### Pre-chorus
+\`\`\`
+F#m     C#m     A       E
+B       C#m     A       E
+[Pre-chorus lyrics]
+\`\`\`
+
+### Chorus
+\`\`\`
+B       E       C#m     A       E
+[Chorus lyrics]
+\`\`\`
+
+## Performance Notes
+- Barre chords: B(799877), A(577655), F#m(244222), C#m(446654)
+- Extended solos over verse progression
+- Country-rock ballad feel`
+            },
+
+            "shakedown-street": {
+                title: "Shakedown Street",
+                key: "C major",
+                tempo: "111 BPM",
+                timeSignature: "4/4",
+                content: `# Shakedown Street
+**Key:** C major | **Tempo:** 111 BPM | **Time:** 4/4
+
+## Song Info
+- Excellent for modal soloing using C Mixolydian
+- C7sus4 to C7 alternation creates signature sound
+- C#7 provides chromatic movement back to verses
+
+## Structure
+### Intro
+\`\`\`
+Dm      C/D     Dm
+[Intro]
+\`\`\`
+
+### Verse
+\`\`\`
+G       C/G     F       C9
+Dm      C/D     Dm      C/D     Dm
+[Add lyrics here when available]
+\`\`\`
+
+### Bridge
+\`\`\`
+Fmaj7   Em7     Fmaj7   Em7
+Ebm7    Dm7     G
+[Bridge lyrics]
+\`\`\`
+
+### Chorus
+\`\`\`
+C7sus4  C7      C7sus4  C7
+[Chorus lyrics]
+\`\`\`
+
+### Jam Section
+\`\`\`
+C7sus4  C7      (extended vamp)
+\`\`\`
+
+## Performance Notes
+- Bridge features descending minor 7th chords
+- End chorus with C#7 transition back to verse
+- Moderate groove feel`
+            },
+
+            "doctor-my-eyes": {
+                title: "Doctor My Eyes",
+                key: "F major",
+                tempo: "150 BPM",
+                timeSignature: "4/4",
+                content: `# Doctor My Eyes
+**Key:** F major | **Tempo:** 150 BPM | **Time:** 4/4
+
+## Song Info
+- Jackson Browne classic
+- I-bVII-IV progression with maintained F bass
+- Driving folk-rock feel
+
+## Structure
+### Intro/Instrumental
+\`\`\`
+F       F       Eb5/F   Bb/F
+[Instrumental]
+\`\`\`
+
+### Verse
+\`\`\`
+F       F       Am      Am
+Dm      Bb      F       F
+[Add lyrics here when available]
+\`\`\`
+
+### Chorus
+\`\`\`
+Dm      Dm      F       F
+Dm      Dm      C       (pause)
+Eb5/F   Bb/F
+[Chorus lyrics]
+\`\`\`
+
+## Performance Notes
+- Eb5/F and Bb/F are power chords over F bass note
+- Guitar solo occurs over intro progression
+- Brief pause before Eb5/F in chorus`
+            },
+
+            "fire-on-the-mountain": {
+                title: "Fire on the Mountain",
+                key: "B major",
+                tempo: "77 BPM",
+                timeSignature: "4/4",
+                content: `# Fire on the Mountain
+**Key:** B major | **Tempo:** 77 BPM | **Time:** 4/4
+
+## Song Info
+- Possibly the simplest song in the setlist
+- Only two chords used throughout
+- Perfect for extended jams in B Mixolydian
+
+## Structure
+### All Sections
+\`\`\`
+B       A       B       A
+[Add lyrics here when available]
+\`\`\`
+
+## Performance Notes
+- Continuous B-A alternation throughout entire song
+- Jerry Garcia used B Mixolydian scale for solos
+- Use thumb for bass notes, muted strings for "pop" sound
+- Medium shuffle with bouncy feel
+- Perfect for beginners but loved by jam bands`
+            },
+
+            "knocking-on-heavens-door": {
+                title: "Knocking on Heaven's Door",
+                key: "G major",
+                tempo: "70 BPM",
+                timeSignature: "4/4",
+                content: `# Knocking on Heaven's Door (Bob Dylan Version)
+**Key:** G major | **Tempo:** 70 BPM | **Time:** 4/4
+
+## Song Info
+- Four-chord song throughout
+- Bob Dylan classic
+- Slow ballad feel
+
+## Structure
+### Intro
+\`\`\`
+G       D       Am      Am
+G       D       C       C
+(repeat)
+\`\`\`
+
+### Verse
+\`\`\`
+G       D       Am
+G       D       C
+[Add lyrics here when available]
+\`\`\`
+
+### Chorus
+\`\`\`
+G       D       Am
+G       D       C
+[Chorus lyrics - same pattern]
+\`\`\`
+
+## Performance Notes
+- Am can be played as Am7 for authentic Dylan sound
+- Basic down-down-down-up strumming pattern
+- Optional walk-down from C to G using bass notes`
+            },
+
+            "going-down-the-road": {
+                title: "Going Down the Road Feeling Bad",
+                key: "E major",
+                tempo: "167 BPM",
+                timeSignature: "4/4",
+                content: `# Going Down the Road Feeling Bad
+**Key:** E major | **Tempo:** 167 BPM | **Time:** 4/4
+
+## Song Info
+- Traditional folk song in Grateful Dead arrangement
+- Often segues into "Bid You Goodnight"
+- Driving folk-rock feel
+
+## Structure
+### Verse
+\`\`\`
+A       E       A       E
+C#m     E       B       E
+[Add lyrics here when available]
+\`\`\`
+
+## Performance Notes
+- Power chords recommended for B and C#m
+- Simple strumming with downbeat emphasis
+- Fast tempo - 167 BPM driving feel`
+            },
+
+            "i-know-you-rider": {
+                title: "I Know You Rider",
+                key: "D major with modal mixture",
+                tempo: "88 BPM",
+                timeSignature: "4/4",
+                content: `# I Know You Rider
+**Key:** D major with modal mixture | **Tempo:** 88 BPM | **Time:** 4/4
+
+## Song Info
+- Traditionally follows "China Cat Sunflower" as medley
+- Uses D Mixolydian and D Dorian modes
+- C and F chords create unique harmonic color
+
+## Structure
+### Verse
+\`\`\`
+D       C       G       D
+[Add lyrics here when available]
+\`\`\`
+
+### Chorus
+\`\`\`
+F       C       F       C
+G       D
+[Chorus lyrics]
+\`\`\`
+
+## Performance Notes
+- Modal interchange with parallel minor modes
+- Features extensive improvisational sections
+- Country-rock shuffle feel`
+            },
+
+            "green-onions": {
+                title: "Green Onions",
+                key: "F minor (F Dorian)",
+                tempo: "136 BPM",
+                timeSignature: "4/4",
+                content: `# Green Onions
+**Key:** F minor (F Dorian mode) | **Tempo:** 136 BPM | **Time:** 4/4
+
+## Song Info
+- Booker T. & the M.G.'s instrumental
+- Heavy swing feel (12/8 shuffle)
+- Characteristic organ riff pattern
+
+## Structure
+### 12-bar blues pattern
+\`\`\`
+Fm7     Ab      Bb      (with variations)
+[Simplified: Fm, Bbm, Cm following standard minor blues]
+\`\`\`
+
+## Performance Notes
+- Organ riff: "two beats chord, one beat minor third up, one beat fourth up"
+- Guitar plays sparse stabs on "and" of beat 4
+- Heavy use of F Dorian/minor pentatonic for solos
+- No lyrics - instrumental only`
+            },
+
+            "crossroads": {
+                title: "Crossroads (Cream Version)",
+                key: "A major",
+                tempo: "101 BPM studio / 132-134 BPM live",
+                timeSignature: "4/4",
+                content: `# Crossroads (Cream Version)
+**Key:** A major | **Tempo:** 101 BPM studio, 132-134 BPM live | **Time:** 4/4
+
+## Song Info
+- Eric Clapton's signature blues arrangement
+- 12-bar blues with quick change
+- Extended guitar solos with multiple cycles
+
+## Structure
+### 12-bar blues progression
+\`\`\`
+A7      A9      (bar 1)
+D7              (bar 2 - quick change)
+A7      A7      (bars 3-4)
+D7      D7      (bars 5-6)
+A7      A7      (bars 7-8)
+E5      D7      (bar 9-10)
+A7      A7 E    (bars 11-12)
+\`\`\`
+
+## Performance Notes
+- Features Clapton's signature riff based on A chord with C/C# alternation
+- Uses dominant 7th chords with occasional 9th extensions
+- Famous fast turnaround lick at end of progressions
+- Multiple 12-bar cycles for extended solos`
+            },
+
+            "monster-mash": {
+                title: "Monster Mash",
+                key: "G major",
+                tempo: "136-143 BPM",
+                timeSignature: "4/4",
+                content: `# Monster Mash
+**Key:** G major | **Tempo:** 136-143 BPM | **Time:** 4/4
+
+## Song Info
+- Extremely simple - same progression throughout
+- Features spoken word sections and sound effects
+- Perfect for theatrical delivery
+
+## Structure
+### Verse/Chorus (same progression)
+\`\`\`
+G       Em      C       D
+[Add lyrics here when available]
+\`\`\`
+
+### Bridge
+\`\`\`
+C       D       C       D
+[Bridge lyrics]
+\`\`\`
+
+## Performance Notes
+- Only four chords: G-Em-C-D throughout
+- Basic open chords perfect for beginners
+- Novelty pop feel with theatrical elements
+- Include sound effects and spoken sections`
+            },
+
+            "ghostbusters": {
+                title: "Ghostbusters Theme",
+                key: "B major",
+                tempo: "115-116 BPM",
+                timeSignature: "4/4",
+                content: `# Ghostbusters Theme
+**Key:** B major | **Tempo:** 115-116 BPM | **Time:** 4/4
+
+## Song Info
+- Iconic bass riff drives the song
+- Uses G#m7b5 for harmonic tension
+- Distinctive call-and-response structure
+
+## Structure
+### Intro/Main Riff
+\`\`\`
+B       A       E
+[Iconic bass riff]
+\`\`\`
+
+### Verse
+\`\`\`
+B       A       E
+[Add lyrics here when available]
+\`\`\`
+
+### Chorus
+\`\`\`
+Bm      Bm/A    G#m7b5  E
+[Chorus with "Ghostbusters!" hook]
+\`\`\`
+
+### Bridge
+\`\`\`
+F#
+[Bridge section]
+\`\`\`
+
+## Performance Notes
+- G#m7b5 (half-diminished) creates tension in chorus
+- Modal harmony (B Dorian/B Mixolydian)
+- Funky pop-rock groove
+- Call-and-response with "Ghostbusters!" vocal hook`
+            }
+        };
+
+        let currentSong = null;
+        let setlist = [];
+
+        function initApp() {
+            renderSongList();
+            renderSetlist();
+            
+            // Auto-save functionality
+            document.getElementById('editor').addEventListener('input', debounce(saveCurrentSong, 500));
+        }
+
+        function renderSongList() {
+            const songList = document.getElementById('songList');
+            songList.innerHTML = '';
+            
+            Object.keys(songsData).forEach(songId => {
+                const song = songsData[songId];
+                const li = document.createElement('li');
+                li.className = 'song-item';
+                li.onclick = () => selectSong(songId);
+                
+                li.innerHTML = `
+                    <div>
+                        <div>${song.title}</div>
+                        <div class="song-key">${song.key} • ${song.tempo}</div>
+                    </div>
+                `;
+                
+                songList.appendChild(li);
+            });
+        }
+
+        function selectSong(songId) {
+            // Save current song before switching
+            saveCurrentSong();
+            
+            currentSong = songId;
+            const song = songsData[songId];
+            
+            // Update UI
+            document.getElementById('editorTitle').textContent = song.title;
+            document.getElementById('editor').value = song.content;
+            document.getElementById('templateSelect').style.display = 'inline-block';
+            
+            // Update active state
+            document.querySelectorAll('.song-item').forEach(item => item.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+            
+            updatePreview();
+        }
+
+        function saveCurrentSong() {
+            if (currentSong) {
+                songsData[currentSong].content = document.getElementById('editor').value;
+                updatePreview();
+            }
+        }
+
+        function updatePreview() {
+            const content = document.getElementById('editor').value;
+            const preview = document.getElementById('preview');
+            
+            // Simple markdown-like rendering for preview
+            let html = content
+                .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+                .replace(/^## (.+)$/gm, '<h2 class="section-header">$1</h2>')
+                .replace(/^### (.+)$/gm, '<h3 class="section-header">$1</h3>')
+                .replace(/^\*\*(.+?)\*\*(.*)$/gm, '<div class="song-info"><strong>$1</strong>$2</div>')
+                .replace(/^```$/gm, '<div class="chord-section">')
+                .replace(/^```/gm, '</div>')
+                .replace(/^([A-G][#b]?[^a-z\n]*?)$/gm, '<div class="chord-line">$1</div>')
+                .replace(/^([^<\n]+)$/gm, '<div class="lyric-line">$1</div>')
+                .replace(/\n/g, '<br>');
+            
+            preview.innerHTML = html;
+        }
+
+        function addToSetlist(songId) {
+            if (!setlist.includes(songId)) {
+                setlist.push(songId);
+                renderSetlist();
+            }
+        }
+
+        function removeFromSetlist(songId) {
+            setlist = setlist.filter(id => id !== songId);
+            renderSetlist();
+        }
+
+        function renderSetlist() {
+            const setlistArea = document.getElementById('setlistArea');
+            
+            if (setlist.length === 0) {
+                setlistArea.innerHTML = '<p style="color: #999; text-align: center;">Drag songs here or click to add</p>';
+                return;
+            }
+            
+            setlistArea.innerHTML = setlist.map((songId, index) => {
+                const song = songsData[songId];
+                return `
+                    <div class="setlist-item" data-song-id="${songId}">
+                        <div>
+                            <strong>${song.title}</strong>
+                            <span class="song-key"> • ${song.key}</span>
+                        </div>
+                        <button class="remove-btn" onclick="removeFromSetlist('${songId}')">&times;</button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function loadTemplate() {
+            const template = document.getElementById('templateSelect').value;
+            const editor = document.getElementById('editor');
+            
+            if (!template || !currentSong) return;
+            
+            const templates = {
+                basic: `# Song Title
+**Key:** | **Tempo:** | **Time:** 4/4
+
+## Song Info
+- [Add song information here]
+
+## Structure
+### Verse
+\`\`\`
+[Chord progression]
+[Add lyrics here when available]
+\`\`\`
+
+### Chorus
+\`\`\`
+[Chord progression]
+[Chorus lyrics]
+\`\`\`
+
+## Performance Notes
+- [Add performance notes here]`,
+
+                "grateful-dead": `# Song Title
+**Key:** | **Tempo:** | **Time:** 4/4
+
+## Song Info
+- Extended jam vehicle
+- Modal approach for solos
+- [Add specific notes]
+
+## Structure
+### Jam Section (repeating)
+\`\`\`
+[Chord progression for jamming]
+[Add lyrics here when available]
+\`\`\`
+
+## Performance Notes
+- Perfect for extended solos
+- Can stretch 10+ minutes
+- [Add scale/mode information]`,
+
+                blues: `# Song Title
+**Key:** | **Tempo:** | **Time:** 4/4
+
+## Song Info
+- 12-bar blues progression
+- [Add specific arrangement notes]
+
+## Structure
+### 12-bar blues
+\`\`\`
+I       I       I       I
+IV      IV      I       I
+V       IV      I       I (V)
+[Add lyrics when available]
+\`\`\`
+
+## Performance Notes
+- Standard blues progression
+- Extended solos over changes
+- [Add specific performance notes]`
+            };
+            
+            if (confirm('This will replace the current content. Continue?')) {
+                editor.value = templates[template];
+                updatePreview();
+            }
+        }
+
+        function exportSetlist() {
+            const setlistData = {
+                name: `Setlist ${new Date().toLocaleDateString()}`,
+                songs: setlist.map(songId => ({
+                    id: songId,
+                    title: songsData[songId].title,
+                    key: songsData[songId].key,
+                    tempo: songsData[songId].tempo
+                })),
+                created: new Date().toISOString()
+            };
+            
+            downloadFile(`setlist-${Date.now()}.json`, JSON.stringify(setlistData, null, 2));
+        }
+
+        function exportAllSongs() {
+            const allSongsData = {
+                songs: songsData,
+                exported: new Date().toISOString()
+            };
+            
+            downloadFile(`all-songs-${Date.now()}.json`, JSON.stringify(allSongsData, null, 2));
+        }
+
+        function importData() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+            input.onchange = (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        try {
+                            const data = JSON.parse(e.target.result);
+                            if (data.songs) {
+                                Object.assign(songsData, data.songs);
+                                renderSongList();
+                                alert('Songs imported successfully!');
+                            } else if (data.name && data.songs) {
+                                // Import setlist
+                                setlist = data.songs.map(song => song.id);
+                                renderSetlist();
+                                alert('Setlist imported successfully!');
+                            }
+                        } catch (error) {
+                            alert('Error importing file: ' + error.message);
+                        }
+                    };
+                    reader.readAsText(file);
+                }
+            };
+            input.click();
+        }
+
+        function downloadFile(filename, content) {
+            const blob = new Blob([content], { type: 'text/plain' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        }
+
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+
+        // Add click functionality to song items for adding to setlist
+        document.addEventListener('click', (e) => {
+            if (e.target.closest('.song-item') && e.shiftKey) {
+                const songItem = e.target.closest('.song-item');
+                const songId = Object.keys(songsData).find(id => 
+                    songsData[id].title === songItem.querySelector('div').textContent
+                );
+                if (songId) {
+                    addToSetlist(songId);
+                }
+            }
+        });
+
+        // Initialize the app
+        initApp();
+    </script>
+</body>
+</html>
