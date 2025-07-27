@@ -21,7 +21,11 @@
 }
 
 .performance-content {
-  @apply flex-1 flex items-center justify-center p-8 text-center;
+  @apply flex-1 overflow-y-auto p-8 text-center;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  min-height: 100%;
 }
 
 .performance-nav {

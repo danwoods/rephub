@@ -26,33 +26,35 @@ function PerformanceMode({ songs, currentIndex, onNext, onPrevious, onExit }) {
   return (
     <div className="performance-mode">
       <div className="performance-content">
-        <div className="max-w-4xl mx-auto">
-          {/* Song title and metadata */}
-          <div className="mb-8">
-            <h1 className="text-4xl md:text-6xl font-bold mb-4 text-white">
-              {currentSong.title}
-            </h1>
-            {(frontmatter.key || frontmatter.tempo) && (
-              <div className="flex justify-center space-x-8 text-lg text-gray-300">
-                {frontmatter.key && (
-                  <span>Key: {frontmatter.key}</span>
-                )}
-                {frontmatter.tempo && (
-                  <span>Tempo: {frontmatter.tempo} BPM</span>
-                )}
-              </div>
-            )}
-          </div>
+        <div className="w-full max-w-4xl mx-auto flex-1 flex flex-col justify-center min-h-0 pb-20">
+          <div className="flex-shrink-0">
+            {/* Song title and metadata */}
+            <div className="mb-8">
+              <h1 className="text-4xl md:text-6xl font-bold mb-4 text-white">
+                {currentSong.title}
+              </h1>
+              {(frontmatter.key || frontmatter.tempo) && (
+                <div className="flex justify-center space-x-8 text-lg text-gray-300">
+                  {frontmatter.key && (
+                    <span>Key: {frontmatter.key}</span>
+                  )}
+                  {frontmatter.tempo && (
+                    <span>Tempo: {frontmatter.tempo} BPM</span>
+                  )}
+                </div>
+              )}
+            </div>
 
-          {/* Song content */}
-          <div 
-            className="text-xl md:text-2xl leading-relaxed text-white"
-            dangerouslySetInnerHTML={{ __html: html }}
-          />
+            {/* Song content */}
+            <div 
+              className="text-xl md:text-2xl leading-relaxed text-white overflow-y-auto"
+              dangerouslySetInnerHTML={{ __html: html }}
+            />
 
-          {/* Song counter */}
-          <div className="mt-8 text-center text-gray-400">
-            {currentIndex + 1} of {songs.length}
+            {/* Song counter */}
+            <div className="mt-8 text-center text-gray-400">
+              {currentIndex + 1} of {songs.length}
+            </div>
           </div>
         </div>
       </div>
