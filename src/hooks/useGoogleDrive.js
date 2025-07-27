@@ -45,6 +45,8 @@ export function useGoogleDrive() {
     }
   };
 
+
+
   const fetchSongsFromDrive = async () => {
     const songs = {};
     console.log('Starting to fetch songs from Google Drive...');
@@ -57,64 +59,83 @@ export function useGoogleDrive() {
 
       console.log('Folders response status:', foldersResponse.status);
       
-      if (foldersResponse.ok) {
-        const foldersData = await foldersResponse.json();
-        console.log('Found folders:', foldersData.files?.length || 0);
-        console.log('Folders:', foldersData.files?.map(f => f.name) || []);
+      if (!foldersResponse.ok) {
+        const errorText = await foldersResponse.text();
+        console.error('Folders API error:', errorText);
+        
+        // Check if we got HTML instead of JSON (common Vercel deployment issue)
+        if (errorText.includes('<!doctype html>') || errorText.includes('<html>')) {
+          throw new Error(`API endpoint returned HTML instead of JSON. This usually means:
+1. GOOGLE_API_KEY environment variable is not set in Vercel
+2. API routes aren't deployed properly
+3. There's a routing issue in vercel.json
 
-        if (foldersData.files && foldersData.files.length > 0) {
-          // Use batch API to fetch all songs at once
-          const folderIds = foldersData.files.map(f => f.id).join(',');
-          console.log(`Using batch API to fetch ${foldersData.files.length} songs`);
-          
-          const batchResponse = await fetch(
-            `/api/drive/batch-songs?folderIds=${folderIds}`
-          );
-
-          console.log('Batch response status:', batchResponse.status);
-
-          if (batchResponse.ok) {
-            const batchData = await batchResponse.json();
-            console.log('Batch data received:', Object.keys(batchData.songs || {}));
-
-            // Process each song from the batch response
-            for (const [folderName, songData] of Object.entries(batchData.songs || {})) {
-              try {
-                console.log(`Processing song: ${folderName}`);
-                console.log(`Content length: ${songData.content.length} characters`);
-
-                // Parse frontmatter to get title
-                const { frontmatter } = parseMarkdownWithFrontmatter(songData.content);
-                const title = frontmatter.title || formatFolderNameToTitle(folderName);
-                console.log(`Song ${folderName} - Title: ${title}, Has frontmatter: ${Object.keys(frontmatter).length > 0}`);
-
-                songs[folderName] = {
-                  title: title,
-                  content: songData.content
-                };
-                console.log(`Successfully added song: ${folderName}`);
-              } catch (parseError) {
-                console.error(`Error parsing content for folder ${folderName}:`, parseError);
-                // Still add the song with formatted folder name as title
-                songs[folderName] = {
-                  title: formatFolderNameToTitle(folderName),
-                  content: songData.content
-                };
-                console.log(`Added song with fallback title: ${formatFolderNameToTitle(folderName)}`);
-              }
-            }
-          } else {
-            console.error('Failed to fetch batch songs:', batchResponse.status);
-            // Fallback to individual requests if batch fails
-            console.log('Falling back to individual requests...');
-            return await fetchSongsIndividually(foldersData.files);
-          }
+Status: ${foldersResponse.status}`);
         }
-      } else {
-        console.error('Failed to fetch folders:', foldersResponse.status);
+        
+        throw new Error(`Failed to fetch songs folders (${foldersResponse.status}): ${errorText}`);
+      }
+      
+      const foldersData = await foldersResponse.json();
+      console.log('Found folders:', foldersData.files?.length || 0);
+      console.log('Folders:', foldersData.files?.map(f => f.name) || []);
+
+      if (foldersData.files && foldersData.files.length > 0) {
+        // Use batch API to fetch all songs at once
+        const folderIds = foldersData.files.map(f => f.id).join(',');
+        console.log(`Using batch API to fetch ${foldersData.files.length} songs`);
+        
+        const batchResponse = await fetch(
+          `/api/drive/batch-songs?folderIds=${folderIds}`
+        );
+
+        console.log('Batch response status:', batchResponse.status);
+
+        if (batchResponse.ok) {
+          const batchData = await batchResponse.json();
+          console.log('Batch data received:', Object.keys(batchData.songs || {}));
+
+          // Process each song from the batch response
+          for (const [folderName, songData] of Object.entries(batchData.songs || {})) {
+            try {
+              console.log(`Processing song: ${folderName}`);
+              console.log(`Content length: ${songData.content.length} characters`);
+
+              // Parse frontmatter to get title
+              const { frontmatter } = parseMarkdownWithFrontmatter(songData.content);
+              const title = frontmatter.title || formatFolderNameToTitle(folderName);
+              console.log(`Song ${folderName} - Title: ${title}, Has frontmatter: ${Object.keys(frontmatter).length > 0}`);
+
+              songs[folderName] = {
+                title: title,
+                content: songData.content
+              };
+              console.log(`Successfully added song: ${folderName}`);
+            } catch (parseError) {
+              console.error(`Error parsing content for folder ${folderName}:`, parseError);
+              // Still add the song with formatted folder name as title
+              songs[folderName] = {
+                title: formatFolderNameToTitle(folderName),
+                content: songData.content
+              };
+              console.log(`Added song with fallback title: ${formatFolderNameToTitle(folderName)}`);
+            }
+          }
+        } else {
+          const errorText = await batchResponse.text();
+          console.error('Batch songs API error:', errorText);
+          
+          // Check if we got HTML instead of JSON
+          if (errorText.includes('<!doctype html>') || errorText.includes('<html>')) {
+            throw new Error(`Batch API returned HTML instead of JSON. Check environment configuration.`);
+          }
+          
+          console.log('Falling back to individual requests...');
+          return await fetchSongsIndividually(foldersData.files);
+        }
       }
     } catch (error) {
-      console.error('API approach failed:', error);
+      console.error('Songs API approach failed:', error);
       throw error;
     }
 
@@ -207,52 +228,63 @@ export function useGoogleDrive() {
 
       console.log('Setlists response status:', filesResponse.status);
       
-      if (filesResponse.ok) {
-        const filesData = await filesResponse.json();
-        console.log('Found setlist files:', filesData.files?.length || 0);
-        console.log('Setlist files:', filesData.files?.map(f => f.name) || []);
-
-        for (const file of filesData.files) {
-          try {
-            console.log(`Processing setlist file: ${file.name} (ID: ${file.id}, MIME: ${file.mimeType})`);
-            
-            // Fetch spreadsheet data - try different sheet names
-            const sheetNames = ['Sheet1', 'Sheet 1', 'A1', 'Sheet1!A:A'];
-            
-            for (const sheetName of sheetNames) {
-              try {
-                            const sheetsResponse = await fetch(
-              `/api/sheets/spreadsheets/${file.id}/values/${sheetName}`
-            );
-
-                console.log(`Sheets response for ${file.name} (${sheetName}):`, sheetsResponse.status);
-
-                if (sheetsResponse.ok) {
-                  const sheetsData = await sheetsResponse.json();
-                  console.log(`Sheets data for ${file.name}:`, sheetsData);
-                  
-                  // Extract song titles from all rows in the first column
-                  const songTitles = sheetsData.values?.map(row => row[0]).filter(title => title && title.trim()) || [];
-                  console.log(`Song titles for ${file.name}:`, songTitles);
-
-                  setlists[file.name] = {
-                    name: file.name,
-                    songs: songTitles
-                  };
-                  console.log(`Successfully added setlist: ${file.name}`);
-                  break; // Found the sheet, no need to try other names
-                }
-              } catch (sheetError) {
-                console.log(`Failed to fetch sheet ${sheetName} for ${file.name}:`, sheetError);
-                continue; // Try next sheet name
-              }
-            }
-          } catch (fileError) {
-            console.error(`Error processing setlist file ${file.name}:`, fileError);
-          }
+      if (!filesResponse.ok) {
+        const errorText = await filesResponse.text();
+        console.error('Setlists API error:', errorText);
+        
+        // Check if we got HTML instead of JSON
+        if (errorText.includes('<!doctype html>') || errorText.includes('<html>')) {
+          throw new Error(`Setlists API returned HTML instead of JSON. Check environment configuration.`);
         }
-      } else {
-        console.error('Failed to fetch setlist files:', filesResponse.status);
+        
+        throw new Error(`Failed to fetch setlists (${filesResponse.status}): ${errorText}`);
+      }
+      
+      const filesData = await filesResponse.json();
+      console.log('Found setlist files:', filesData.files?.length || 0);
+      console.log('Setlist files:', filesData.files?.map(f => f.name) || []);
+
+      for (const file of filesData.files) {
+        try {
+          console.log(`Processing setlist file: ${file.name} (ID: ${file.id}, MIME: ${file.mimeType})`);
+          
+          // Fetch spreadsheet data - try different sheet names
+          const sheetNames = ['Sheet1', 'Sheet 1', 'A1', 'Sheet1!A:A'];
+          
+          for (const sheetName of sheetNames) {
+            try {
+              const sheetsResponse = await fetch(
+                `/api/sheets/spreadsheets/${file.id}/values/${sheetName}`
+              );
+
+              console.log(`Sheets response for ${file.name} (${sheetName}):`, sheetsResponse.status);
+
+              if (sheetsResponse.ok) {
+                const sheetsData = await sheetsResponse.json();
+                console.log(`Sheets data for ${file.name}:`, sheetsData);
+                
+                // Extract song titles from all rows in the first column
+                const songTitles = sheetsData.values?.map(row => row[0]).filter(title => title && title.trim()) || [];
+                console.log(`Song titles for ${file.name}:`, songTitles);
+
+                setlists[file.name] = {
+                  name: file.name,
+                  songs: songTitles
+                };
+                console.log(`Successfully added setlist: ${file.name}`);
+                break; // Found the sheet, no need to try other names
+              } else {
+                const errorText = await sheetsResponse.text();
+                console.log(`Failed to fetch sheet ${sheetName} for ${file.name} (${sheetsResponse.status}):`, errorText);
+              }
+            } catch (sheetError) {
+              console.log(`Failed to fetch sheet ${sheetName} for ${file.name}:`, sheetError);
+              continue; // Try next sheet name
+            }
+          }
+        } catch (fileError) {
+          console.error(`Error processing setlist file ${file.name}:`, fileError);
+        }
       }
     } catch (error) {
       console.error('Setlists API approach failed:', error);
@@ -263,7 +295,7 @@ export function useGoogleDrive() {
     return setlists;
   };
 
-  const loadData = async () => {
+  const loadData = async (forceRefresh = false) => {
     setLoading(true);
     setError(null);
     console.log('Starting to load data...');
@@ -271,12 +303,20 @@ export function useGoogleDrive() {
     try {
       // Try to load cached data first
       const cachedData = loadCachedData();
-      if (cachedData) {
-        console.log('Using cached data');
+      if (cachedData && !forceRefresh) {
+        console.log('Using valid cached data - skipping API calls');
         setSongs(cachedData.songs || {});
         setSetlists(cachedData.setlists || {});
+        setLoading(false);
+        return;
       } else {
-        console.log('No cached data found');
+        console.log('No valid cached data found or refresh forced - fetching from API');
+        // Show cached data immediately while fetching fresh data
+        if (cachedData) {
+          console.log('Showing expired cached data while fetching fresh data');
+          setSongs(cachedData.songs || {});
+          setSetlists(cachedData.setlists || {});
+        }
       }
 
       // Fetch fresh data
@@ -331,7 +371,7 @@ export function useGoogleDrive() {
   };
 
   const refreshData = () => {
-    loadData();
+    loadData(true); // Force refresh when explicitly requested
   };
 
   useEffect(() => {

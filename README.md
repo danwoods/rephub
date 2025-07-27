@@ -27,21 +27,27 @@ npm install
 2. Create a new project or select an existing one
 3. Enable the Google Drive API and Google Sheets API
 4. Create credentials (API Key)
-5. Copy your API key
+5. Restrict the API key to Google Drive API and Google Sheets API for security
+6. Copy your API key
 
-### 3. Update Configuration
+### 3. Environment Configuration
 
-Edit `src/config.js` and replace the API key:
+#### For Local Development
 
-```javascript
-export const CONFIG = {
-  songsFolderId: '1w-jfbKc8pK4qCnak29xdb2cj6SpyxF9m',
-  setlistsFolderId: '1jlKGeefkosdsrBwJ2toN0IB8a-G1FhGP',
-  apiKey: 'YOUR_API_KEY_HERE', // Replace with your actual API key
-  cacheKey: 'rephub_cache',
-  cacheExpiry: 24 * 60 * 60 * 1000 // 24 hours
-};
+Create a `.env.local` file in the project root:
+
+```bash
+GOOGLE_API_KEY=your_actual_api_key_here
 ```
+
+#### For Vercel Deployment
+
+1. Go to your project in the Vercel dashboard
+2. Navigate to Settings → Environment Variables
+3. Add a new environment variable:
+   - **Name**: `GOOGLE_API_KEY`
+   - **Value**: Your Google API key
+   - **Environments**: Production, Preview, and Development
 
 ### 4. Google Drive Folder Structure
 
@@ -59,16 +65,34 @@ export const CONFIG = {
   ```
 
 **Setlists Folder:**
-- Contains spreadsheet files (.xlsx)
+- Contains Google Sheets files
 - First column (A) contains song titles
 - Example:
   ```
   setlists/
-  ├── Summer Concert.xlsx
-  └── Winter Show.xlsx
+  ├── Summer Concert (Google Sheet)
+  └── Winter Show (Google Sheet)
   ```
 
-### 5. Song File Format
+### 5. Update Folder IDs
+
+Edit `src/config.js` and replace the folder IDs with your own:
+
+```javascript
+export const CONFIG = {
+  songsFolderId: 'YOUR_SONGS_FOLDER_ID',     // Replace with your songs folder ID
+  setlistsFolderId: 'YOUR_SETLISTS_FOLDER_ID', // Replace with your setlists folder ID
+  cacheKey: 'rephub_cache',
+  cacheExpiry: 24 * 60 * 60 * 1000 // 24 hours
+};
+```
+
+To get folder IDs:
+1. Open Google Drive in your browser
+2. Navigate to the folder you want to use
+3. Copy the folder ID from the URL: `https://drive.google.com/drive/folders/FOLDER_ID_HERE`
+
+### 6. Song File Format
 
 Each `README.md` should follow this format:
 
@@ -85,13 +109,39 @@ I once was lost, but [G]now I'm [D]found\\
 Was blind, but [G]now I [D]see\\
 ```
 
-### 6. Run the Application
+### 7. Run the Application
 
+#### Local Development
 ```bash
 npm start
 ```
 
 The app will open at `http://localhost:3000`
+
+#### Deploy to Vercel
+
+1. Connect your repository to Vercel
+2. Ensure the `GOOGLE_API_KEY` environment variable is set (see step 3)
+3. Deploy
+
+### 8. Troubleshooting
+
+#### Check Environment Configuration
+
+After deployment, you can test if your environment is configured correctly by visiting:
+`https://your-app.vercel.app/api/test-env`
+
+This endpoint will tell you if the Google API key is properly configured.
+
+#### Common Issues
+
+- **No spreadsheets showing**: Usually means `GOOGLE_API_KEY` is not set in Vercel environment variables
+- **No songs showing**: Check that the songs folder ID in `src/config.js` is correct
+- **API errors**: Verify that both Google Drive API and Google Sheets API are enabled in Google Cloud Console
+
+#### Debug Information
+
+The app includes extensive console logging. Open browser DevTools → Console to see detailed information about API requests and responses.
 
 ## Usage
 
