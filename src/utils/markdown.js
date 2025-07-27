@@ -19,12 +19,18 @@ export function parseMarkdownWithFrontmatter(content) {
     };
   }
 
-  const frontmatterRegex = /^---\s*\n([\s\S]*?)\n---\s*\n([\s\S]*)$/;
+  // More flexible regex that handles different line endings and spacing
+  const frontmatterRegex = /^---\s*[\r\n]+([\s\S]*?)[\r\n]+---\s*[\r\n]+([\s\S]*)$/;
   const match = content.match(frontmatterRegex);
 
+  console.log('Content starts with:', content.substring(0, 200));
+  console.log('Frontmatter match:', match ? 'Found' : 'Not found');
+
   if (match) {
+    console.log('Frontmatter content:', match[1]);
     try {
       const frontmatter = parseToml(match[1]);
+      console.log('Parsed frontmatter:', frontmatter);
       const markdownContent = match[2];
       const html = md.render(markdownContent);
       
@@ -46,6 +52,7 @@ export function parseMarkdownWithFrontmatter(content) {
     }
   } else {
     // No frontmatter found, treat entire content as markdown
+    console.log('No frontmatter found, treating entire content as markdown');
     try {
       const html = md.render(content);
       return {

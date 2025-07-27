@@ -38,16 +38,16 @@ function SongView({ songs }) {
         
         <h1 className="text-3xl font-bold text-gray-900 mb-2">{song.title}</h1>
         
-        {(frontmatter.key || frontmatter.tempo) && (
+        {(frontmatter.key || frontmatter.bpm) && (
           <div className="flex items-center space-x-6 text-sm text-gray-600 mb-6">
             {frontmatter.key && (
               <span className="flex items-center">
                 Key: {frontmatter.key}
               </span>
             )}
-            {frontmatter.tempo && (
+            {frontmatter.bpm && (
               <span className="flex items-center">
-                Tempo: {frontmatter.tempo} BPM
+                BPM: {frontmatter.bpm} BPM
               </span>
             )}
           </div>
