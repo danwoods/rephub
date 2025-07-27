@@ -70,6 +70,14 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
+  // Check if API key is configured
+  if (!process.env.GOOGLE_API_KEY) {
+    console.error('GOOGLE_API_KEY environment variable is not set');
+    return res.status(500).json({ 
+      error: 'Google API key not configured. Please set GOOGLE_API_KEY environment variable in Vercel dashboard.' 
+    });
+  }
+
   try {
     // Initialize Google Drive API
     const drive = google.drive({
