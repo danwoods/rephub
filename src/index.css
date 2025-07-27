@@ -1,0 +1,50 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom styles for chord rendering */
+.chord {
+  @apply text-primary-500 font-bold font-mono cursor-pointer transition-colors duration-200 inline-block mr-2 align-top text-sm;
+}
+
+.chord-line {
+  @apply text-primary-500 font-bold font-mono mb-1 text-sm;
+}
+
+.lyric-line {
+  @apply mb-2 leading-relaxed;
+}
+
+/* Performance mode styles */
+.performance-mode {
+  @apply fixed inset-0 bg-black text-white z-50 flex flex-col;
+}
+
+.performance-content {
+  @apply flex-1 flex items-center justify-center p-8 text-center;
+}
+
+.performance-nav {
+  @apply absolute bottom-8 left-1/2 transform -translate-x-1/2 flex space-x-4;
+}
+
+.performance-btn {
+  @apply bg-white bg-opacity-20 hover:bg-opacity-30 text-white px-6 py-3 rounded-lg transition-all duration-200 backdrop-blur-sm;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-gray-100;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-gray-300 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-gray-400;
+} 

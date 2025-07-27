@@ -3,7 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Setlist Manager</title>
+    <title>RepHub - Music Repertoire & Setlists</title>
+    
+    <!-- External Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/markdown-it@13.0.1/dist/markdown-it.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/markdown-it-chords@1.0.3/dist/markdown-it-chords.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/toml@0.2.1/lib/browser/umd/toml.min.js"></script>
+    
     <style>
         * {
             margin: 0;
@@ -88,11 +94,11 @@
             font-size: 1rem;
         }
 
-        .song-list {
+        .song-list, .setlist-list {
             list-style: none;
         }
 
-        .song-item {
+        .song-item, .setlist-item {
             padding: 0.5rem;
             cursor: pointer;
             border-radius: 4px;
@@ -102,11 +108,11 @@
             align-items: center;
         }
 
-        .song-item:hover {
+        .song-item:hover, .setlist-item:hover {
             background: #404040;
         }
 
-        .song-item.active {
+        .song-item.active, .setlist-item.active {
             background: #4CAF50;
             color: white;
         }
@@ -121,40 +127,6 @@
             color: #e0e0e0;
         }
 
-        .setlist-area {
-            min-height: 200px;
-            border: 2px dashed #404040;
-            border-radius: 4px;
-            padding: 1rem;
-            margin-top: 0.5rem;
-        }
-
-        .setlist-item {
-            background: #404040;
-            padding: 0.5rem;
-            margin-bottom: 0.25rem;
-            border-radius: 4px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            cursor: move;
-        }
-
-        .setlist-item:hover {
-            background: #505050;
-        }
-
-        .remove-btn {
-            background: #f44336;
-            color: white;
-            border: none;
-            border-radius: 50%;
-            width: 20px;
-            height: 20px;
-            cursor: pointer;
-            font-size: 12px;
-        }
-
         .content-area {
             flex: 1;
             display: flex;
@@ -162,77 +134,191 @@
             min-width: 0;
         }
 
-        .editor-header {
+        .content-header {
             background: #333;
             padding: 1rem;
             border-bottom: 1px solid #404040;
             display: flex;
-            justify-content: between;
+            justify-content: space-between;
             align-items: center;
         }
 
-        .editor-title {
+        .content-title {
             font-size: 1.2rem;
             color: #4CAF50;
         }
 
-        .editor-container {
+        .content-body {
             flex: 1;
-            display: flex;
-        }
-
-        .editor {
-            flex: 1;
-            background: #1e1e1e;
-            color: #e0e0e0;
-            border: none;
-            padding: 1rem;
-            font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
-            font-size: 14px;
-            line-height: 1.5;
-            resize: none;
-            outline: none;
-        }
-
-        .preview {
-            flex: 1;
-            background: #f8f8f8;
-            color: #333;
-            padding: 1rem;
+            padding: 2rem;
             overflow-y: auto;
-            border-left: 1px solid #404040;
+            background: #1e1e1e;
         }
 
+        /* Markdown Content Styling */
+        .markdown-content {
+            line-height: 1.6;
+            font-size: 1.1rem;
+        }
+
+        .markdown-content h1 {
+            color: #4CAF50;
+            margin-bottom: 1rem;
+            font-size: 2rem;
+        }
+
+        .markdown-content h2 {
+            color: #4CAF50;
+            margin: 1.5rem 0 0.5rem 0;
+            font-size: 1.5rem;
+        }
+
+        .markdown-content h3 {
+            color: #4CAF50;
+            margin: 1rem 0 0.5rem 0;
+            font-size: 1.2rem;
+        }
+
+        .markdown-content p {
+            margin-bottom: 0.5rem;
+        }
+
+        .markdown-content ul, .markdown-content ol {
+            margin: 0.5rem 0 0.5rem 2rem;
+        }
+
+        .markdown-content li {
+            margin-bottom: 0.25rem;
+        }
+
+        /* Chord Styling */
+        .chord {
+            color: #ff6b35;
+            font-weight: bold;
+            font-family: monospace;
+            cursor: pointer;
+            transition: color 0.2s;
+            display: inline-block;
+            margin-right: 0.5rem;
+            vertical-align: top;
+            font-size: 0.9em;
+        }
+
+        .chord:hover {
+            color: #ff8c42;
+        }
+
+        .chord.diagram {
+            display: inline-block;
+            margin: 0.5rem 0;
+            padding: 0.5rem;
+            background: #2d2d2d;
+            border-radius: 4px;
+            font-family: monospace;
+            white-space: pre;
+        }
+
+        /* Chord line styling */
         .chord-line {
             color: #ff6b35;
             font-weight: bold;
             font-family: monospace;
             margin-bottom: 0.25rem;
+            font-size: 0.9em;
         }
 
         .lyric-line {
             margin-bottom: 0.5rem;
+            line-height: 1.4;
         }
 
-        .section-header {
-            font-weight: bold;
+        /* Performance mode chord styling */
+        .performance-content .chord {
+            font-size: 1.2rem;
+            color: #ff6b35;
+            margin-right: 0.75rem;
+        }
+
+        .performance-content .chord-line {
+            font-size: 1.1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .performance-content .lyric-line {
+            font-size: 1.5rem;
+            line-height: 1.6;
+            margin-bottom: 0.75rem;
+        }
+
+        /* Performance Mode Styles */
+        .performance-mode {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: #000;
+            color: #fff;
+            z-index: 1000;
+            display: none;
+            flex-direction: column;
+        }
+
+        .performance-header {
+            background: #1a1a1a;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #333;
+        }
+
+        .performance-title {
+            font-size: 1.5rem;
             color: #4CAF50;
-            margin: 1rem 0 0.5rem 0;
-            border-bottom: 1px solid #ddd;
-            padding-bottom: 0.25rem;
         }
 
-        .song-info {
-            background: #e8f5e8;
+        .performance-nav {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .performance-nav .btn {
+            font-size: 1.2rem;
+            padding: 0.75rem 1.5rem;
+        }
+
+        .performance-content {
+            flex: 1;
+            padding: 3rem;
+            overflow-y: auto;
+            font-size: 1.5rem;
+            line-height: 2;
+        }
+
+        .performance-content .chord {
+            font-size: 1.8rem;
+            color: #ff6b35;
+        }
+
+        /* Loading States */
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 200px;
+            color: #999;
+        }
+
+        .error {
+            color: #f44336;
             padding: 1rem;
+            background: #2d2d2d;
             border-radius: 4px;
-            margin-bottom: 1rem;
+            margin: 1rem 0;
         }
 
-        .song-info strong {
-            color: #2e7d32;
-        }
-
+        /* Responsive Design */
         @media (max-width: 768px) {
             .main-container {
                 flex-direction: column;
@@ -244,593 +330,524 @@
                 max-height: 50vh;
             }
             
-            .editor-container {
-                flex-direction: column;
-            }
-            
-            .preview {
-                border-left: none;
-                border-top: 1px solid #404040;
+            .performance-content {
+                padding: 2rem;
+                font-size: 1.2rem;
             }
         }
 
-        .template-select {
-            background: #444;
-            color: #e0e0e0;
-            border: 1px solid #666;
-            padding: 0.5rem;
-            border-radius: 4px;
+        /* iPad Optimizations */
+        @media (min-width: 768px) and (max-width: 1024px) {
+            .performance-content {
+                font-size: 1.8rem;
+                line-height: 2.2;
+            }
+            
+            .performance-nav .btn {
+                font-size: 1.4rem;
+                padding: 1rem 2rem;
+            }
         }
     </style>
 </head>
 <body>
     <div class="header">
-        <h1>🎵 Setlist Manager</h1>
+        <h1>🎵 RepHub</h1>
         <div class="header-controls">
-            <button class="btn" onclick="exportSetlist()">Export Setlist</button>
-            <button class="btn" onclick="exportAllSongs()">Export All Songs</button>
-            <button class="btn btn-secondary" onclick="importData()">Import</button>
+            <button class="btn" id="refreshBtn">Refresh Data</button>
+            <button class="btn btn-secondary" id="performanceBtn">Performance Mode</button>
         </div>
     </div>
 
     <div class="main-container">
         <div class="sidebar">
             <div class="sidebar-section">
-                <h3>Songs Library</h3>
-                <ul class="song-list" id="songList"></ul>
+                <h3>Songs</h3>
+                <ul class="song-list" id="songList">
+                    <div class="loading">Loading songs...</div>
+                </ul>
             </div>
             
             <div class="sidebar-section">
-                <h3>Current Setlist</h3>
-                <div class="setlist-area" id="setlistArea">
-                    <p style="color: #999; text-align: center;">Drag songs here or click to add</p>
-                </div>
+                <h3>Setlists</h3>
+                <ul class="setlist-list" id="setlistList">
+                    <div class="loading">Loading setlists...</div>
+                </ul>
             </div>
         </div>
 
         <div class="content-area">
-            <div class="editor-header">
-                <div class="editor-title" id="editorTitle">Select a song to edit</div>
-                <select class="template-select" id="templateSelect" onchange="loadTemplate()" style="display: none;">
-                    <option value="">Load Template...</option>
-                    <option value="basic">Basic Song</option>
-                    <option value="grateful-dead">Grateful Dead Style</option>
-                    <option value="blues">Blues</option>
-                </select>
+            <div class="content-header">
+                <div class="content-title" id="contentTitle">Select a song or setlist</div>
             </div>
-
-            <div class="editor-container">
-                <textarea class="editor" id="editor" placeholder="Select a song from the library to start editing..."></textarea>
-                <div class="preview" id="preview"></div>
+            <div class="content-body" id="contentBody">
+                <p style="text-align: center; color: #999; margin-top: 2rem;">
+                    Choose a song from the sidebar to view its content
+                </p>
             </div>
         </div>
     </div>
 
+    <!-- Performance Mode Overlay -->
+    <div class="performance-mode" id="performanceMode">
+        <div class="performance-header">
+            <div class="performance-title" id="performanceTitle">Performance Mode</div>
+            <div class="performance-nav">
+                <button class="btn btn-secondary" id="prevBtn">← Previous</button>
+                <button class="btn" id="nextBtn">Next →</button>
+                <button class="btn btn-secondary" id="exitBtn">Exit</button>
+            </div>
+        </div>
+        <div class="performance-content" id="performanceContent">
+            <!-- Performance content will be loaded here -->
+        </div>
+    </div>
+
     <script>
-        // Sample song data based on the research
-        const songsData = {
-            "franklins-tower": {
-                title: "Franklin's Tower",
-                key: "A Mixolydian",
-                tempo: "107 BPM",
-                timeSignature: "4/4",
-                content: `# Franklin's Tower
-**Key:** A Mixolydian | **Tempo:** 107 BPM | **Time:** 4/4
-
-## Song Info
-- Main jam section: A - G - D - G (infinite two-bar loop)
-- All sections use same progression
-- Designed for extended jamming (10+ minutes)
-- G chords displaced half a beat for syncopated feel
-
-## Structure
-### Jam Section (repeating)
-\`\`\`
-A       G       D       G
-[Add lyrics here when available]
-\`\`\`
-
-## Performance Notes
-- Perfect for extended guitar solos in A Mixolydian mode
-- Use simple major chords but creates modal sound
-- Signature syncopated groove from displaced G chords`
-            },
-            
-            "quinn-the-eskimo": {
-                title: "Quinn the Eskimo (The Mighty Quinn)",
-                key: "A major",
-                tempo: "88 BPM",
-                timeSignature: "4/4",
-                content: `# Quinn the Eskimo (The Mighty Quinn)
-**Key:** A major | **Tempo:** 88 BPM | **Time:** 4/4
-
-## Song Info
-- Bob Dylan original with simple structure
-- Perfect for jam sessions
-- Alternative keys: C major, G major
-
-## Structure
-### Verse
-\`\`\`
-E       A       E       A
-[Add lyrics here when available]
-\`\`\`
-
-### Chorus
-\`\`\`
-E       B       E
-[Chorus lyrics]
-B       A       E
-[Chorus lyrics continued]
-\`\`\`
-
-### Bridge
-\`\`\`
-E       B       A       E
-[Bridge lyrics]
-\`\`\`
-
-## Performance Notes
-- B chord creates tension before resolving
-- Medium shuffle/folk rock feel`
-            },
-
-            "the-harder-they-come": {
-                title: "The Harder They Come",
-                key: "Db major (orig) / A major / C major",
-                tempo: "100 BPM",
-                timeSignature: "4/4",
-                content: `# The Harder They Come
-**Key:** Db major (original), commonly A major or C major | **Tempo:** 100 BPM | **Time:** 4/4
-
-## Song Info
-- Jimmy Cliff reggae classic
-- Often transposed for easier playing
-- Same progression for verse and chorus
-
-## Structure (A major version)
-### Verse/Chorus
-\`\`\`
-E       D       A       F#m
-[Add lyrics here when available]
-\`\`\`
-
-## Structure (C major version - easier)
-### Verse/Chorus
-\`\`\`
-G       F       C       Am
-[Add lyrics here when available]
-\`\`\`
-
-## Performance Notes
-- Use capo 1st fret for C major version
-- Reggae rhythm emphasizes beats 2 and 4
-- Single progression repeats throughout`
-            },
-
-            "sugaree": {
-                title: "Sugaree",
-                key: "B Mixolydian",
-                tempo: "86-88 BPM",
-                timeSignature: "4/4",
-                content: `# Sugaree
-**Key:** B Mixolydian | **Tempo:** 86-88 BPM | **Time:** 4/4
-
-## Song Info
-- Grateful Dead original using barre chords
-- Mixolydian mode creates dark, bluesy character
-- Popular for extended jams
-
-## Structure
-### Verse
-\`\`\`
-B       E       A       E
-[Add lyrics here when available]
-\`\`\`
-
-### Pre-chorus
-\`\`\`
-F#m     C#m     A       E
-B       C#m     A       E
-[Pre-chorus lyrics]
-\`\`\`
-
-### Chorus
-\`\`\`
-B       E       C#m     A       E
-[Chorus lyrics]
-\`\`\`
-
-## Performance Notes
-- Barre chords: B(799877), A(577655), F#m(244222), C#m(446654)
-- Extended solos over verse progression
-- Country-rock ballad feel`
-            },
-
-            "shakedown-street": {
-                title: "Shakedown Street",
-                key: "C major",
-                tempo: "111 BPM",
-                timeSignature: "4/4",
-                content: `# Shakedown Street
-**Key:** C major | **Tempo:** 111 BPM | **Time:** 4/4
-
-## Song Info
-- Excellent for modal soloing using C Mixolydian
-- C7sus4 to C7 alternation creates signature sound
-- C#7 provides chromatic movement back to verses
-
-## Structure
-### Intro
-\`\`\`
-Dm      C/D     Dm
-[Intro]
-\`\`\`
-
-### Verse
-\`\`\`
-G       C/G     F       C9
-Dm      C/D     Dm      C/D     Dm
-[Add lyrics here when available]
-\`\`\`
-
-### Bridge
-\`\`\`
-Fmaj7   Em7     Fmaj7   Em7
-Ebm7    Dm7     G
-[Bridge lyrics]
-\`\`\`
-
-### Chorus
-\`\`\`
-C7sus4  C7      C7sus4  C7
-[Chorus lyrics]
-\`\`\`
-
-### Jam Section
-\`\`\`
-C7sus4  C7      (extended vamp)
-\`\`\`
-
-## Performance Notes
-- Bridge features descending minor 7th chords
-- End chorus with C#7 transition back to verse
-- Moderate groove feel`
-            },
-
-            "doctor-my-eyes": {
-                title: "Doctor My Eyes",
-                key: "F major",
-                tempo: "150 BPM",
-                timeSignature: "4/4",
-                content: `# Doctor My Eyes
-**Key:** F major | **Tempo:** 150 BPM | **Time:** 4/4
-
-## Song Info
-- Jackson Browne classic
-- I-bVII-IV progression with maintained F bass
-- Driving folk-rock feel
-
-## Structure
-### Intro/Instrumental
-\`\`\`
-F       F       Eb5/F   Bb/F
-[Instrumental]
-\`\`\`
-
-### Verse
-\`\`\`
-F       F       Am      Am
-Dm      Bb      F       F
-[Add lyrics here when available]
-\`\`\`
-
-### Chorus
-\`\`\`
-Dm      Dm      F       F
-Dm      Dm      C       (pause)
-Eb5/F   Bb/F
-[Chorus lyrics]
-\`\`\`
-
-## Performance Notes
-- Eb5/F and Bb/F are power chords over F bass note
-- Guitar solo occurs over intro progression
-- Brief pause before Eb5/F in chorus`
-            },
-
-            "fire-on-the-mountain": {
-                title: "Fire on the Mountain",
-                key: "B major",
-                tempo: "77 BPM",
-                timeSignature: "4/4",
-                content: `# Fire on the Mountain
-**Key:** B major | **Tempo:** 77 BPM | **Time:** 4/4
-
-## Song Info
-- Possibly the simplest song in the setlist
-- Only two chords used throughout
-- Perfect for extended jams in B Mixolydian
-
-## Structure
-### All Sections
-\`\`\`
-B       A       B       A
-[Add lyrics here when available]
-\`\`\`
-
-## Performance Notes
-- Continuous B-A alternation throughout entire song
-- Jerry Garcia used B Mixolydian scale for solos
-- Use thumb for bass notes, muted strings for "pop" sound
-- Medium shuffle with bouncy feel
-- Perfect for beginners but loved by jam bands`
-            },
-
-            "knocking-on-heavens-door": {
-                title: "Knocking on Heaven's Door",
-                key: "G major",
-                tempo: "70 BPM",
-                timeSignature: "4/4",
-                content: `# Knocking on Heaven's Door (Bob Dylan Version)
-**Key:** G major | **Tempo:** 70 BPM | **Time:** 4/4
-
-## Song Info
-- Four-chord song throughout
-- Bob Dylan classic
-- Slow ballad feel
-
-## Structure
-### Intro
-\`\`\`
-G       D       Am      Am
-G       D       C       C
-(repeat)
-\`\`\`
-
-### Verse
-\`\`\`
-G       D       Am
-G       D       C
-[Add lyrics here when available]
-\`\`\`
-
-### Chorus
-\`\`\`
-G       D       Am
-G       D       C
-[Chorus lyrics - same pattern]
-\`\`\`
-
-## Performance Notes
-- Am can be played as Am7 for authentic Dylan sound
-- Basic down-down-down-up strumming pattern
-- Optional walk-down from C to G using bass notes`
-            },
-
-            "going-down-the-road": {
-                title: "Going Down the Road Feeling Bad",
-                key: "E major",
-                tempo: "167 BPM",
-                timeSignature: "4/4",
-                content: `# Going Down the Road Feeling Bad
-**Key:** E major | **Tempo:** 167 BPM | **Time:** 4/4
-
-## Song Info
-- Traditional folk song in Grateful Dead arrangement
-- Often segues into "Bid You Goodnight"
-- Driving folk-rock feel
-
-## Structure
-### Verse
-\`\`\`
-A       E       A       E
-C#m     E       B       E
-[Add lyrics here when available]
-\`\`\`
-
-## Performance Notes
-- Power chords recommended for B and C#m
-- Simple strumming with downbeat emphasis
-- Fast tempo - 167 BPM driving feel`
-            },
-
-            "i-know-you-rider": {
-                title: "I Know You Rider",
-                key: "D major with modal mixture",
-                tempo: "88 BPM",
-                timeSignature: "4/4",
-                content: `# I Know You Rider
-**Key:** D major with modal mixture | **Tempo:** 88 BPM | **Time:** 4/4
-
-## Song Info
-- Traditionally follows "China Cat Sunflower" as medley
-- Uses D Mixolydian and D Dorian modes
-- C and F chords create unique harmonic color
-
-## Structure
-### Verse
-\`\`\`
-D       C       G       D
-[Add lyrics here when available]
-\`\`\`
-
-### Chorus
-\`\`\`
-F       C       F       C
-G       D
-[Chorus lyrics]
-\`\`\`
-
-## Performance Notes
-- Modal interchange with parallel minor modes
-- Features extensive improvisational sections
-- Country-rock shuffle feel`
-            },
-
-            "green-onions": {
-                title: "Green Onions",
-                key: "F minor (F Dorian)",
-                tempo: "136 BPM",
-                timeSignature: "4/4",
-                content: `# Green Onions
-**Key:** F minor (F Dorian mode) | **Tempo:** 136 BPM | **Time:** 4/4
-
-## Song Info
-- Booker T. & the M.G.'s instrumental
-- Heavy swing feel (12/8 shuffle)
-- Characteristic organ riff pattern
-
-## Structure
-### 12-bar blues pattern
-\`\`\`
-Fm7     Ab      Bb      (with variations)
-[Simplified: Fm, Bbm, Cm following standard minor blues]
-\`\`\`
-
-## Performance Notes
-- Organ riff: "two beats chord, one beat minor third up, one beat fourth up"
-- Guitar plays sparse stabs on "and" of beat 4
-- Heavy use of F Dorian/minor pentatonic for solos
-- No lyrics - instrumental only`
-            },
-
-            "crossroads": {
-                title: "Crossroads (Cream Version)",
-                key: "A major",
-                tempo: "101 BPM studio / 132-134 BPM live",
-                timeSignature: "4/4",
-                content: `# Crossroads (Cream Version)
-**Key:** A major | **Tempo:** 101 BPM studio, 132-134 BPM live | **Time:** 4/4
-
-## Song Info
-- Eric Clapton's signature blues arrangement
-- 12-bar blues with quick change
-- Extended guitar solos with multiple cycles
-
-## Structure
-### 12-bar blues progression
-\`\`\`
-A7      A9      (bar 1)
-D7              (bar 2 - quick change)
-A7      A7      (bars 3-4)
-D7      D7      (bars 5-6)
-A7      A7      (bars 7-8)
-E5      D7      (bar 9-10)
-A7      A7 E    (bars 11-12)
-\`\`\`
-
-## Performance Notes
-- Features Clapton's signature riff based on A chord with C/C# alternation
-- Uses dominant 7th chords with occasional 9th extensions
-- Famous fast turnaround lick at end of progressions
-- Multiple 12-bar cycles for extended solos`
-            },
-
-            "monster-mash": {
-                title: "Monster Mash",
-                key: "G major",
-                tempo: "136-143 BPM",
-                timeSignature: "4/4",
-                content: `# Monster Mash
-**Key:** G major | **Tempo:** 136-143 BPM | **Time:** 4/4
-
-## Song Info
-- Extremely simple - same progression throughout
-- Features spoken word sections and sound effects
-- Perfect for theatrical delivery
-
-## Structure
-### Verse/Chorus (same progression)
-\`\`\`
-G       Em      C       D
-[Add lyrics here when available]
-\`\`\`
-
-### Bridge
-\`\`\`
-C       D       C       D
-[Bridge lyrics]
-\`\`\`
-
-## Performance Notes
-- Only four chords: G-Em-C-D throughout
-- Basic open chords perfect for beginners
-- Novelty pop feel with theatrical elements
-- Include sound effects and spoken sections`
-            },
-
-            "ghostbusters": {
-                title: "Ghostbusters Theme",
-                key: "B major",
-                tempo: "115-116 BPM",
-                timeSignature: "4/4",
-                content: `# Ghostbusters Theme
-**Key:** B major | **Tempo:** 115-116 BPM | **Time:** 4/4
-
-## Song Info
-- Iconic bass riff drives the song
-- Uses G#m7b5 for harmonic tension
-- Distinctive call-and-response structure
-
-## Structure
-### Intro/Main Riff
-\`\`\`
-B       A       E
-[Iconic bass riff]
-\`\`\`
-
-### Verse
-\`\`\`
-B       A       E
-[Add lyrics here when available]
-\`\`\`
-
-### Chorus
-\`\`\`
-Bm      Bm/A    G#m7b5  E
-[Chorus with "Ghostbusters!" hook]
-\`\`\`
-
-### Bridge
-\`\`\`
-F#
-[Bridge section]
-\`\`\`
-
-## Performance Notes
-- G#m7b5 (half-diminished) creates tension in chorus
-- Modal harmony (B Dorian/B Mixolydian)
-- Funky pop-rock groove
-- Call-and-response with "Ghostbusters!" vocal hook`
-            }
+        // Configuration
+        const CONFIG = {
+            songsFolderId: '1w-jfbKc8pK4qCnak29xdb2cj6SpyxF9m',
+            setlistsFolderId: '1jlKGeefkosdsrBwJ2toN0IB8a-G1FhGP',
+            apiKey: 'AIzaSyCzmV05PTAIGZwPkKlIyoJU_s6-MxtlhuQ', // Replace with your actual API key
+            cacheKey: 'rephub_cache',
+            cacheExpiry: 24 * 60 * 60 * 1000 // 24 hours
         };
 
-        let currentSong = null;
-        let setlist = [];
+        // State
+        let songs = {};
+        let setlists = {};
+        let currentView = null;
+        let currentSetlist = null;
+        let currentSongIndex = 0;
+        let performanceSongs = [];
+
+        // Initialize markdown-it with chords plugin
+        const md = window.markdownit('commonmark').use(window.markdownItChords);
+
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', function() {
+            initApp();
+        });
 
         function initApp() {
-            renderSongList();
-            renderSetlist();
+            loadCachedData();
+            loadData();
+            setupEventListeners();
+        }
+
+        function setupEventListeners() {
+            // Header buttons
+            document.getElementById('refreshBtn').addEventListener('click', refreshData);
+            document.getElementById('performanceBtn').addEventListener('click', togglePerformanceMode);
             
-            // Auto-save functionality
-            document.getElementById('editor').addEventListener('input', debounce(saveCurrentSong, 500));
+            // Performance mode buttons
+            document.getElementById('prevBtn').addEventListener('click', previousSong);
+            document.getElementById('nextBtn').addEventListener('click', nextSong);
+            document.getElementById('exitBtn').addEventListener('click', togglePerformanceMode);
+            
+            // Keyboard navigation for performance mode
+            document.addEventListener('keydown', (e) => {
+                const performanceMode = document.getElementById('performanceMode');
+                if (performanceMode.style.display === 'flex') {
+                    if (e.key === 'ArrowRight' || e.key === ' ') {
+                        e.preventDefault();
+                        nextSong();
+                    } else if (e.key === 'ArrowLeft') {
+                        e.preventDefault();
+                        previousSong();
+                    } else if (e.key === 'Escape') {
+                        e.preventDefault();
+                        togglePerformanceMode();
+                    }
+                }
+            });
+        }
+
+        function showSongsList() {
+            currentView = 'songs';
+            document.getElementById('contentTitle').textContent = 'All Songs';
+            document.getElementById('contentBody').innerHTML = `
+                <div style="text-align: center; color: #999; margin-top: 2rem;">
+                    Select a song from the sidebar to view its content
+                </div>
+            `;
+        }
+
+        function showSong(songId) {
+            currentView = 'song';
+            const song = songs[songId];
+            if (!song) {
+                document.getElementById('contentBody').innerHTML = `
+                    <div class="error">Song not found</div>
+                `;
+                return;
+            }
+
+            document.getElementById('contentTitle').textContent = song.title;
+            
+            // Parse frontmatter and content
+            const { frontmatter, content } = parseMarkdownWithFrontmatter(song.content);
+            
+            // Render markdown with chords
+            const renderedContent = md.render(content);
+            
+            document.getElementById('contentBody').innerHTML = `
+                <div class="markdown-content">
+                    <div style="background: #2d2d2d; padding: 1rem; border-radius: 4px; margin-bottom: 2rem;">
+                        <strong>Key:</strong> ${frontmatter.key || 'N/A'} | 
+                        <strong>Tempo:</strong> ${frontmatter.tempo || 'N/A'}
+                    </div>
+                    ${renderedContent}
+                </div>
+            `;
+        }
+
+        function showSetlistsList() {
+            currentView = 'setlists';
+            document.getElementById('contentTitle').textContent = 'All Setlists';
+            document.getElementById('contentBody').innerHTML = `
+                <div style="text-align: center; color: #999; margin-top: 2rem;">
+                    Select a setlist from the sidebar to view its songs
+                </div>
+            `;
+        }
+
+        function showSetlist(setlistId) {
+            currentView = 'setlist';
+            const setlist = setlists[setlistId];
+            if (!setlist) {
+                document.getElementById('contentBody').innerHTML = `
+                    <div class="error">Setlist not found</div>
+                `;
+                return;
+            }
+
+            document.getElementById('contentTitle').textContent = setlist.name;
+            
+            const songsHtml = setlist.songs.map((songTitle, index) => {
+                const song = Object.values(songs).find(s => s.title === songTitle);
+                const songId = Object.keys(songs).find(id => songs[id].title === songTitle);
+                
+                if (song) {
+                    return `
+                        <div style="background: #2d2d2d; padding: 1rem; margin-bottom: 1rem; border-radius: 4px; cursor: pointer;" 
+                             onclick="showSong('${encodeURIComponent(songId)}')">
+                            <div style="font-weight: bold; color: #4CAF50;">${song.title}</div>
+                            <div style="color: #999; font-size: 0.9rem;">Key: ${song.frontmatter?.key || 'N/A'} | Tempo: ${song.frontmatter?.tempo || 'N/A'}</div>
+                        </div>
+                    `;
+                } else {
+                    return `
+                        <div style="background: #2d2d2d; padding: 1rem; margin-bottom: 1rem; border-radius: 4px; opacity: 0.5;">
+                            <div style="font-weight: bold;">${songTitle}</div>
+                            <div style="color: #f44336;">Song not found in library</div>
+                        </div>
+                    `;
+                }
+            }).join('');
+
+            document.getElementById('contentBody').innerHTML = `
+                <div style="margin-bottom: 2rem;">
+                    <button class="btn" onclick="startPerformanceMode('${setlistId}')">Start Performance Mode</button>
+                </div>
+                <div>
+                    ${songsHtml}
+                </div>
+            `;
+        }
+
+        function startPerformanceMode(setlistId) {
+            const setlist = setlists[setlistId];
+            if (!setlist) return;
+
+            currentSetlist = setlistId;
+            performanceSongs = setlist.songs.map(songTitle => {
+                const song = Object.values(songs).find(s => s.title === songTitle);
+                return song || { title: songTitle, content: `# ${songTitle}\n\nSong not found in library.` };
+            }).filter(song => song);
+
+            currentSongIndex = 0;
+            showPerformanceSong();
+            document.getElementById('performanceMode').style.display = 'flex';
+        }
+
+        function showPerformanceSong() {
+            if (performanceSongs.length === 0) return;
+
+            const song = performanceSongs[currentSongIndex];
+            const { frontmatter, content } = parseMarkdownWithFrontmatter(song.content);
+            const renderedContent = md.render(content);
+
+            document.getElementById('performanceTitle').textContent = `${song.title} (${currentSongIndex + 1}/${performanceSongs.length})`;
+            document.getElementById('performanceContent').innerHTML = `
+                <div class="markdown-content">
+                    ${renderedContent}
+                </div>
+            `;
+        }
+
+        function nextSong() {
+            if (currentSongIndex < performanceSongs.length - 1) {
+                currentSongIndex++;
+                showPerformanceSong();
+            }
+        }
+
+        function previousSong() {
+            if (currentSongIndex > 0) {
+                currentSongIndex--;
+                showPerformanceSong();
+            }
+        }
+
+        function togglePerformanceMode() {
+            const performanceMode = document.getElementById('performanceMode');
+            if (performanceMode.style.display === 'flex') {
+                performanceMode.style.display = 'none';
+            }
+        }
+
+        function parseMarkdownWithFrontmatter(content) {
+            const frontmatterMatch = content.match(/^---\s*\n([\s\S]*?)\n---\s*\n([\s\S]*)$/);
+            
+            if (frontmatterMatch) {
+                const frontmatterStr = frontmatterMatch[1];
+                const markdownContent = frontmatterMatch[2];
+                
+                try {
+                    const frontmatter = TOML.parse(frontmatterStr);
+                    return { frontmatter, content: markdownContent };
+                } catch (error) {
+                    console.error('Error parsing TOML frontmatter:', error);
+                    return { frontmatter: {}, content };
+                }
+            }
+            
+            return { frontmatter: {}, content };
+        }
+
+        function loadData() {
+            fetchGoogleDriveData()
+                .then(data => {
+                    songs = data.songs;
+                    setlists = data.setlists;
+                    renderSongList();
+                    renderSetlistList();
+                    saveCachedData();
+                    
+                    // Show message if no data loaded
+                    if (Object.keys(songs).length === 0 && Object.keys(setlists).length === 0) {
+                        document.getElementById('contentBody').innerHTML = `
+                            <div class="error">
+                                No data found. Please check your Google Drive API configuration and folder structure.
+                                <br><br>
+                                <strong>Required setup:</strong>
+                                <ul>
+                                    <li>Google Drive API key configured</li>
+                                    <li>Songs folder contains subfolders with README.md files</li>
+                                    <li>Setlists folder contains spreadsheet files</li>
+                                </ul>
+                                <br>
+                                <button class="btn" onclick="loadData()">Retry</button>
+                            </div>
+                        `;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading data:', error);
+                    document.getElementById('contentBody').innerHTML = `
+                        <div class="error">
+                            Error loading data from Google Drive. Please check your API configuration.
+                            <br><br>
+                            <strong>Error:</strong> ${error.message}
+                            <br><br>
+                            <button class="btn" onclick="loadData()">Retry</button>
+                        </div>
+                    `;
+                });
+        }
+
+        function fetchGoogleDriveData() {
+            // For public files, we can use direct access without API keys
+            return Promise.all([
+                fetchSongsDirect(),
+                fetchSetlistsDirect()
+            ]).then(([songsData, setlistsData]) => {
+                return {
+                    songs: songsData,
+                    setlists: setlistsData
+                };
+            });
+        }
+
+        async function fetchSongsFromDrive(folderId) {
+            try {
+                // For public folders, we can use direct access
+                // First, let's try the API approach, then fallback to direct links
+                
+                // Try API approach first
+                try {
+                    const folderResponse = await fetch(`https://www.googleapis.com/drive/v3/files?q='${folderId}'+in+parents&fields=files(id,name,mimeType)&key=AIzaSyCzmV05PTAIGZwPkKlIyoJU_s6-MxtlhuQ`);
+                    const folderData = await folderResponse.json();
+                    
+                    const songs = {};
+                    
+                    // Process each song folder
+                    for (const folder of folderData.files) {
+                        if (folder.mimeType === 'application/vnd.google-apps.folder') {
+                            // Fetch README.md from this folder
+                            const readmeResponse = await fetch(`https://www.googleapis.com/drive/v3/files?q='${folder.id}'+in+parents+and+name='README.md'&fields=files(id,name)&key=AIzaSyCzmV05PTAIGZwPkKlIyoJU_s6-MxtlhuQ`);
+                            const readmeData = await readmeResponse.json();
+                            
+                            if (readmeData.files.length > 0) {
+                                const readmeId = readmeData.files[0].id;
+                                
+                                // Fetch the content of README.md
+                                const contentResponse = await fetch(`https://www.googleapis.com/drive/v3/files/${readmeId}?alt=media&key=AIzaSyCzmV05PTAIGZwPkKlIyoJU_s6-MxtlhuQ`);
+                                const content = await contentResponse.text();
+                                
+                                // Parse frontmatter to get title
+                                const { frontmatter } = parseMarkdownWithFrontmatter(content);
+                                const title = frontmatter.title || folder.name;
+                                
+                                songs[folder.name] = {
+                                    title: title,
+                                    content: content
+                                };
+                            }
+                        }
+                    }
+                    
+                    return songs;
+                } catch (apiError) {
+                    console.log('API approach failed, trying direct access...');
+                    return await fetchSongsDirect(folderId);
+                }
+            } catch (error) {
+                console.error('Error fetching songs from Google Drive:', error);
+                return getSampleSongs();
+            }
+        }
+
+        async function fetchSongsDirect() {
+            // Dynamically discover all folders and their README files
+            const songs = {};
+            
+            try {
+                // First, get the list of all folders in the songs folder
+                const foldersResponse = await fetch(`https://www.googleapis.com/drive/v3/files?q='${CONFIG.songsFolderId}'+in+parents+and+mimeType='application/vnd.google-apps.folder'&fields=files(id,name)&key=${CONFIG.apiKey}`);
+                
+                if (foldersResponse.ok) {
+                    const foldersData = await foldersResponse.json();
+                    
+                    // For each folder, find and fetch the README.md file
+                    for (const folder of foldersData.files) {
+                        try {
+                            // Find README.md in this folder
+                            const readmeResponse = await fetch(`https://www.googleapis.com/drive/v3/files?q='${folder.id}'+in+parents+and+name='README.md'&fields=files(id,name)&key=${CONFIG.apiKey}`);
+                            
+                            if (readmeResponse.ok) {
+                                const readmeData = await readmeResponse.json();
+                                
+                                if (readmeData.files.length > 0) {
+                                    const readmeId = readmeData.files[0].id;
+                                    
+                                    // Fetch the README.md content
+                                    const contentResponse = await fetch(`https://www.googleapis.com/drive/v3/files/${readmeId}?alt=media&key=${CONFIG.apiKey}`);
+                                    
+                                    if (contentResponse.ok) {
+                                        const content = await contentResponse.text();
+                                        
+                                        // Parse frontmatter to get title
+                                        const { frontmatter } = parseMarkdownWithFrontmatter(content);
+                                        const title = frontmatter.title || folder.name;
+                                        
+                                        songs[folder.name] = {
+                                            title: title,
+                                            content: content
+                                        };
+                                    }
+                                }
+                            }
+                        } catch (folderError) {
+                            console.log(`Error processing folder ${folder.name}:`, folderError);
+                        }
+                    }
+                }
+            } catch (error) {
+                console.log('API approach failed, trying alternative method...');
+                // Fallback: try to discover folders using a different approach
+                return await fetchSongsAlternative();
+            }
+            
+            return songs;
+        }
+
+        async function fetchSongsAlternative() {
+            // Alternative approach for public folders without API key
+            const songs = {};
+            
+            // This would require you to provide the folder IDs, but we can make it more dynamic
+            // For now, return empty and show instructions
+            console.log('Please configure the Google Drive API or provide folder IDs for direct access');
+            
+            return songs;
+        }
+
+        async function fetchSetlistsDirect() {
+            // Direct access for public spreadsheets (no API key needed)
+            const setlists = {};
+            
+            // For public spreadsheets, you can use direct access
+            const setlistFiles = {
+                'test': {
+                    id: 'YOUR_SPREADSHEET_ID_HERE', // Get this from the spreadsheet URL
+                    name: 'Test Setlist'
+                }
+            };
+            
+            for (const [fileName, setlistInfo] of Object.entries(setlistFiles)) {
+                try {
+                    // For now, return sample data since direct spreadsheet access is complex
+                    // In a real implementation, you'd need to parse CSV or use Google Sheets API
+                    setlists[fileName] = {
+                        name: setlistInfo.name,
+                        songs: ['Amazing Grace', 'Greensleeves', 'House of the Rising Sun']
+                    };
+                } catch (error) {
+                    console.log(`Could not fetch ${fileName}:`, error);
+                }
+            }
+            
+            return setlists;
+        }
+
+        function getSampleSongs() {
+            // Return empty object - no hard-coded songs
+            return {};
+        }
+
+        function getSampleSetlists() {
+            // Return empty object - no hard-coded setlists
+            return {};
         }
 
         function renderSongList() {
             const songList = document.getElementById('songList');
             songList.innerHTML = '';
             
-            Object.keys(songsData).forEach(songId => {
-                const song = songsData[songId];
+            Object.keys(songs).forEach(songId => {
+                const song = songs[songId];
+                const { frontmatter } = parseMarkdownWithFrontmatter(song.content);
+                
                 const li = document.createElement('li');
                 li.className = 'song-item';
-                li.onclick = () => selectSong(songId);
+                li.addEventListener('click', () => showSong(songId));
                 
                 li.innerHTML = `
                     <div>
                         <div>${song.title}</div>
-                        <div class="song-key">${song.key} • ${song.tempo}</div>
+                        <div class="song-key">${frontmatter.key || 'N/A'} • ${frontmatter.tempo || 'N/A'} BPM</div>
                     </div>
                 `;
                 
@@ -838,256 +855,61 @@ F#
             });
         }
 
-        function selectSong(songId) {
-            // Save current song before switching
-            saveCurrentSong();
+        function renderSetlistList() {
+            const setlistList = document.getElementById('setlistList');
+            setlistList.innerHTML = '';
             
-            currentSong = songId;
-            const song = songsData[songId];
-            
-            // Update UI
-            document.getElementById('editorTitle').textContent = song.title;
-            document.getElementById('editor').value = song.content;
-            document.getElementById('templateSelect').style.display = 'inline-block';
-            
-            // Update active state
-            document.querySelectorAll('.song-item').forEach(item => item.classList.remove('active'));
-            event.currentTarget.classList.add('active');
-            
-            updatePreview();
-        }
-
-        function saveCurrentSong() {
-            if (currentSong) {
-                songsData[currentSong].content = document.getElementById('editor').value;
-                updatePreview();
-            }
-        }
-
-        function updatePreview() {
-            const content = document.getElementById('editor').value;
-            const preview = document.getElementById('preview');
-            
-            // Simple markdown-like rendering for preview
-            let html = content
-                .replace(/^# (.+)$/gm, '<h1>$1</h1>')
-                .replace(/^## (.+)$/gm, '<h2 class="section-header">$1</h2>')
-                .replace(/^### (.+)$/gm, '<h3 class="section-header">$1</h3>')
-                .replace(/^\*\*(.+?)\*\*(.*)$/gm, '<div class="song-info"><strong>$1</strong>$2</div>')
-                .replace(/^```$/gm, '<div class="chord-section">')
-                .replace(/^```/gm, '</div>')
-                .replace(/^([A-G][#b]?[^a-z\n]*?)$/gm, '<div class="chord-line">$1</div>')
-                .replace(/^([^<\n]+)$/gm, '<div class="lyric-line">$1</div>')
-                .replace(/\n/g, '<br>');
-            
-            preview.innerHTML = html;
-        }
-
-        function addToSetlist(songId) {
-            if (!setlist.includes(songId)) {
-                setlist.push(songId);
-                renderSetlist();
-            }
-        }
-
-        function removeFromSetlist(songId) {
-            setlist = setlist.filter(id => id !== songId);
-            renderSetlist();
-        }
-
-        function renderSetlist() {
-            const setlistArea = document.getElementById('setlistArea');
-            
-            if (setlist.length === 0) {
-                setlistArea.innerHTML = '<p style="color: #999; text-align: center;">Drag songs here or click to add</p>';
-                return;
-            }
-            
-            setlistArea.innerHTML = setlist.map((songId, index) => {
-                const song = songsData[songId];
-                return `
-                    <div class="setlist-item" data-song-id="${songId}">
-                        <div>
-                            <strong>${song.title}</strong>
-                            <span class="song-key"> • ${song.key}</span>
-                        </div>
-                        <button class="remove-btn" onclick="removeFromSetlist('${songId}')">&times;</button>
+            Object.keys(setlists).forEach(setlistId => {
+                const setlist = setlists[setlistId];
+                
+                const li = document.createElement('li');
+                li.className = 'setlist-item';
+                li.addEventListener('click', () => showSetlist(setlistId));
+                
+                li.innerHTML = `
+                    <div>
+                        <div>${setlist.name}</div>
+                        <div class="song-key">${setlist.songs.length} songs</div>
                     </div>
                 `;
-            }).join('');
+                
+                setlistList.appendChild(li);
+            });
         }
 
-        function loadTemplate() {
-            const template = document.getElementById('templateSelect').value;
-            const editor = document.getElementById('editor');
-            
-            if (!template || !currentSong) return;
-            
-            const templates = {
-                basic: `# Song Title
-**Key:** | **Tempo:** | **Time:** 4/4
-
-## Song Info
-- [Add song information here]
-
-## Structure
-### Verse
-\`\`\`
-[Chord progression]
-[Add lyrics here when available]
-\`\`\`
-
-### Chorus
-\`\`\`
-[Chord progression]
-[Chorus lyrics]
-\`\`\`
-
-## Performance Notes
-- [Add performance notes here]`,
-
-                "grateful-dead": `# Song Title
-**Key:** | **Tempo:** | **Time:** 4/4
-
-## Song Info
-- Extended jam vehicle
-- Modal approach for solos
-- [Add specific notes]
-
-## Structure
-### Jam Section (repeating)
-\`\`\`
-[Chord progression for jamming]
-[Add lyrics here when available]
-\`\`\`
-
-## Performance Notes
-- Perfect for extended solos
-- Can stretch 10+ minutes
-- [Add scale/mode information]`,
-
-                blues: `# Song Title
-**Key:** | **Tempo:** | **Time:** 4/4
-
-## Song Info
-- 12-bar blues progression
-- [Add specific arrangement notes]
-
-## Structure
-### 12-bar blues
-\`\`\`
-I       I       I       I
-IV      IV      I       I
-V       IV      I       I (V)
-[Add lyrics when available]
-\`\`\`
-
-## Performance Notes
-- Standard blues progression
-- Extended solos over changes
-- [Add specific performance notes]`
-            };
-            
-            if (confirm('This will replace the current content. Continue?')) {
-                editor.value = templates[template];
-                updatePreview();
+        function loadCachedData() {
+            try {
+                const cached = localStorage.getItem(CONFIG.cacheKey);
+                if (cached) {
+                    const data = JSON.parse(cached);
+                    if (Date.now() - data.timestamp < CONFIG.cacheExpiry) {
+                        songs = data.songs || {};
+                        setlists = data.setlists || {};
+                        renderSongList();
+                        renderSetlistList();
+                    }
+                }
+            } catch (error) {
+                console.error('Error loading cached data:', error);
             }
         }
 
-        function exportSetlist() {
-            const setlistData = {
-                name: `Setlist ${new Date().toLocaleDateString()}`,
-                songs: setlist.map(songId => ({
-                    id: songId,
-                    title: songsData[songId].title,
-                    key: songsData[songId].key,
-                    tempo: songsData[songId].tempo
-                })),
-                created: new Date().toISOString()
-            };
-            
-            downloadFile(`setlist-${Date.now()}.json`, JSON.stringify(setlistData, null, 2));
-        }
-
-        function exportAllSongs() {
-            const allSongsData = {
-                songs: songsData,
-                exported: new Date().toISOString()
-            };
-            
-            downloadFile(`all-songs-${Date.now()}.json`, JSON.stringify(allSongsData, null, 2));
-        }
-
-        function importData() {
-            const input = document.createElement('input');
-            input.type = 'file';
-            input.accept = '.json';
-            input.onchange = (e) => {
-                const file = e.target.files[0];
-                if (file) {
-                    const reader = new FileReader();
-                    reader.onload = (e) => {
-                        try {
-                            const data = JSON.parse(e.target.result);
-                            if (data.songs) {
-                                Object.assign(songsData, data.songs);
-                                renderSongList();
-                                alert('Songs imported successfully!');
-                            } else if (data.name && data.songs) {
-                                // Import setlist
-                                setlist = data.songs.map(song => song.id);
-                                renderSetlist();
-                                alert('Setlist imported successfully!');
-                            }
-                        } catch (error) {
-                            alert('Error importing file: ' + error.message);
-                        }
-                    };
-                    reader.readAsText(file);
-                }
-            };
-            input.click();
-        }
-
-        function downloadFile(filename, content) {
-            const blob = new Blob([content], { type: 'text/plain' });
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = filename;
-            document.body.appendChild(a);
-            a.click();
-            window.URL.revokeObjectURL(url);
-            document.body.removeChild(a);
-        }
-
-        function debounce(func, wait) {
-            let timeout;
-            return function executedFunction(...args) {
-                const later = () => {
-                    clearTimeout(timeout);
-                    func(...args);
+        function saveCachedData() {
+            try {
+                const data = {
+                    songs,
+                    setlists,
+                    timestamp: Date.now()
                 };
-                clearTimeout(timeout);
-                timeout = setTimeout(later, wait);
-            };
+                localStorage.setItem(CONFIG.cacheKey, JSON.stringify(data));
+            } catch (error) {
+                console.error('Error saving cached data:', error);
+            }
         }
 
-        // Add click functionality to song items for adding to setlist
-        document.addEventListener('click', (e) => {
-            if (e.target.closest('.song-item') && e.shiftKey) {
-                const songItem = e.target.closest('.song-item');
-                const songId = Object.keys(songsData).find(id => 
-                    songsData[id].title === songItem.querySelector('div').textContent
-                );
-                if (songId) {
-                    addToSetlist(songId);
-                }
-            }
-        });
-
-        // Initialize the app
-        initApp();
+        function refreshData() {
+            loadData();
+        }
     </script>
 </body>
 </html>
