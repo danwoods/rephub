@@ -87,15 +87,44 @@ export default async function handler(req, res) {
 
     const { params } = req.query;
     
-    // Parse the route: /api/sheets/spreadsheets/{spreadsheetId}/values/{range}
-    if (!params || params.length < 3) {
-      return res.status(400).json({ error: 'Invalid route format. Expected: /spreadsheets/{spreadsheetId}/values/{range}' });
+    if (!params || params.length < 1) {
+      return res.status(400).json({ error: 'Invalid route format. Expected: /spreadsheets/{spreadsheetId} or /spreadsheets/{spreadsheetId}/values/{range}' });
     }
     
     const spreadsheetId = params[0];
+    
+    // Check if this is a metadata request (no values path)
+    if (params.length === 1) {
+      console.log('Sheets API metadata request:', { spreadsheetId });
+      
+      const response = await rateLimitedRequest(async () => {
+        return await retryWithBackoff(async () => {
+          return await sheets.spreadsheets.get({
+            spreadsheetId: spreadsheetId,
+            fields: 'properties,sheets.properties'
+          });
+        });
+      });
+      
+      console.log('Sheets API metadata response:', response.data);
+      
+      if (response.data && typeof response.data === 'object') {
+        res.json(response.data);
+      } else {
+        console.error('Invalid metadata response data type:', typeof response.data);
+        res.status(500).json({ error: 'Invalid response from Google Sheets API' });
+      }
+      return;
+    }
+    
+    // Parse the route for values: /api/sheets/spreadsheets/{spreadsheetId}/values/{range}
+    if (params.length < 3 || params[1] !== 'values') {
+      return res.status(400).json({ error: 'Invalid route format. Expected: /spreadsheets/{spreadsheetId}/values/{range}' });
+    }
+    
     const range = params.slice(2).join('/'); // Join remaining parts for the range
     
-    console.log('Sheets API request:', { spreadsheetId, range });
+    console.log('Sheets API values request:', { spreadsheetId, range });
     
     const response = await rateLimitedRequest(async () => {
       return await retryWithBackoff(async () => {
@@ -107,10 +136,42 @@ export default async function handler(req, res) {
     });
     
     console.log('Sheets API response:', response.data);
-    res.json(response.data);
+    
+    // Ensure we're returning valid JSON
+    if (response.data && typeof response.data === 'object') {
+      res.json(response.data);
+    } else {
+      console.error('Invalid response data type:', typeof response.data);
+      res.status(500).json({ error: 'Invalid response from Google Sheets API' });
+    }
   } catch (error) {
     console.error('Sheets API error:', error.message);
     console.error('Sheets API error details:', error);
-    res.status(500).json({ error: error.message });
+    
+    // Check for specific error types
+    let errorMessage = error.message;
+    let statusCode = 500;
+    
+    if (error.message.includes('automated queries')) {
+      errorMessage = 'Google detected automated queries. Please try again later.';
+      statusCode = 429;
+    } else if (error.message.includes('rate limit')) {
+      errorMessage = 'Rate limit exceeded. Please try again later.';
+      statusCode = 429;
+    } else if (error.message.includes('permission') || error.message.includes('forbidden')) {
+      errorMessage = 'Permission denied. Check API key and spreadsheet permissions.';
+      statusCode = 403;
+    } else if (error.message.includes('not found')) {
+      errorMessage = 'Spreadsheet or sheet not found. Check the spreadsheet ID and sheet name.';
+      statusCode = 404;
+    }
+    
+    // Return plain JSON error response
+    res.status(statusCode).json({ 
+      error: errorMessage,
+      details: process.env.NODE_ENV === 'development' ? error.message : undefined,
+      spreadsheetId: req.query.params?.[0],
+      range: req.query.params?.slice(2).join('/')
+    });
   }
 } 

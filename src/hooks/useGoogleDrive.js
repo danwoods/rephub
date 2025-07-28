@@ -309,8 +309,59 @@ Status: ${foldersResponse.status}`);
             `Processing setlist file: ${file.name} (ID: ${file.id}, MIME: ${file.mimeType})`
           );
 
-          // Fetch spreadsheet data - try different sheet names
-          const sheetNames = ['Sheet1', 'Sheet 1', 'A1', 'Sheet1!A:A'];
+          // First, get the spreadsheet metadata to find actual sheet names
+          let sheetNames = ['Sheet1', 'Sheet 1']; // fallback names
+          try {
+            const metadataResponse = await fetch(
+              `/api/sheets/spreadsheets/${file.id}`
+            );
+
+            if (!metadataResponse.ok) {
+              const metadataError = await metadataResponse.text();
+              console.error(
+                `Cannot access spreadsheet ${file.name}:`,
+                metadataError
+              );
+              continue; // Skip this spreadsheet
+            }
+
+            const metadataText = await metadataResponse.text();
+            let metadata;
+            try {
+              metadata = JSON.parse(metadataText);
+              console.log(`Spreadsheet ${file.name} is accessible`);
+
+              // Extract actual sheet names from metadata
+              if (metadata.sheets && Array.isArray(metadata.sheets)) {
+                const actualSheetNames = metadata.sheets
+                  .map((sheet) => sheet.properties?.title)
+                  .filter((name) => name);
+                if (actualSheetNames.length > 0) {
+                  sheetNames = actualSheetNames;
+                  console.log(
+                    `Found sheet names for ${file.name}:`,
+                    sheetNames
+                  );
+                } else {
+                  console.log(
+                    `No sheet names found in metadata for ${file.name}, using fallback names`
+                  );
+                }
+              }
+            } catch (parseError) {
+              console.error(
+                `Error parsing metadata for ${file.name}:`,
+                parseError
+              );
+              continue; // Skip this spreadsheet
+            }
+          } catch (metadataError) {
+            console.error(
+              `Error getting metadata for ${file.name}:`,
+              metadataError
+            );
+            continue; // Skip this spreadsheet
+          }
 
           for (const sheetName of sheetNames) {
             try {
@@ -324,7 +375,36 @@ Status: ${foldersResponse.status}`);
               );
 
               if (sheetsResponse.ok) {
-                const sheetsData = await sheetsResponse.json();
+                // Check if response is JSON before parsing
+                const responseText = await sheetsResponse.text();
+                let sheetsData;
+
+                try {
+                  sheetsData = JSON.parse(responseText);
+                } catch (parseError) {
+                  console.error(
+                    `Invalid JSON response for ${file.name} (${sheetName}):`,
+                    responseText.substring(0, 200) + '...'
+                  );
+
+                  // Check if it's an HTML error page from Google
+                  if (
+                    responseText.includes('<!doctype html>') ||
+                    responseText.includes('<html>')
+                  ) {
+                    console.error(
+                      'Received HTML instead of JSON - likely a Google API error or rate limiting'
+                    );
+                    throw new Error(
+                      'Google Sheets API returned HTML error page - possible rate limiting or API key issue'
+                    );
+                  }
+
+                  throw new Error(
+                    `Invalid JSON response: ${parseError.message}`
+                  );
+                }
+
                 console.log(`Sheets data for ${file.name}:`, sheetsData);
 
                 // Extract song titles from all rows in the first column
@@ -346,6 +426,31 @@ Status: ${foldersResponse.status}`);
                   `Failed to fetch sheet ${sheetName} for ${file.name} (${sheetsResponse.status}):`,
                   errorText
                 );
+
+                // Try to parse error as JSON for better error messages
+                let parsedError;
+                try {
+                  parsedError = JSON.parse(errorText);
+                  if (parsedError.error) {
+                    console.error(
+                      `API Error for ${file.name}: ${parsedError.error}`
+                    );
+                    if (sheetsResponse.status === 429) {
+                      console.log(
+                        'Rate limiting detected, will try other sheet names'
+                      );
+                    } else if (sheetsResponse.status === 404) {
+                      console.log(
+                        `Sheet ${sheetName} not found, will try other sheet names`
+                      );
+                    }
+                  }
+                } catch (e) {
+                  console.log(
+                    'Could not parse error response as JSON:',
+                    errorText.substring(0, 100)
+                  );
+                }
               }
             } catch (sheetError) {
               console.log(
