@@ -161,7 +161,7 @@ function AppContent() {
           <div className="w-10" /> {/* Spacer for centering */}
         </div>
 
-        <div className="flex-1">
+        <div className="flex-1 overflow-hidden">
           <Routes>
             <Route path="/" element={<SongList songs={songs} />} />
             <Route path="/songs" element={<SongList songs={songs} />} />
