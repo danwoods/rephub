@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { parseMarkdownWithFrontmatter } from '../utils/markdown';
 
 function SongList({ songs }) {
   const songEntries = Object.entries(songs);
@@ -41,52 +42,59 @@ function SongList({ songs }) {
         </div>
 
         <div className="grid gap-4">
-          {songEntries.map(([songId, song]) => (
-            <Link
-              key={songId}
-              to={`/songs/${encodeURIComponent(songId)}`}
-              className="block bg-white rounded-lg border border-gray-200 p-6 hover:shadow-md transition-shadow duration-200"
-            >
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                    {song.title}
-                  </h3>
-                  <div className="flex items-center space-x-4 text-sm text-gray-600">
-                    <span className="flex items-center">
-                      <svg
-                        className="w-4 h-4 mr-1"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M7 4V2a1 1 0 011-1h8a1 1 0 011 1v2m-9 0h10m-10 0a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V6a2 2 0 00-2-2"
-                        />
-                      </svg>
-                      {song.key}
-                    </span>
+          {songEntries.map(([songId, song]) => {
+            // Parse frontmatter to get the key
+            const { frontmatter } = parseMarkdownWithFrontmatter(song.content);
+
+            return (
+              <Link
+                key={songId}
+                to={`/songs/${encodeURIComponent(songId)}`}
+                className="block bg-white rounded-lg border border-gray-200 p-6 hover:shadow-md transition-shadow duration-200"
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                      {song.title}
+                    </h3>
+                    {frontmatter.key && (
+                      <div className="flex items-center space-x-4 text-sm text-gray-600">
+                        <span className="flex items-center">
+                          <svg
+                            className="w-4 h-4 mr-1"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M7 4V2a1 1 0 011-1h8a1 1 0 011 1v2m-9 0h10m-10 0a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V6a2 2 0 00-2-2"
+                            />
+                          </svg>
+                          {frontmatter.key}
+                        </span>
+                      </div>
+                    )}
                   </div>
+                  <svg
+                    className="w-5 h-5 text-gray-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 5l7 7-7 7"
+                    />
+                  </svg>
                 </div>
-                <svg
-                  className="w-5 h-5 text-gray-400"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 5l7 7-7 7"
-                  />
-                </svg>
-              </div>
-            </Link>
-          ))}
+              </Link>
+            );
+          })}
         </div>
       </div>
     </div>
