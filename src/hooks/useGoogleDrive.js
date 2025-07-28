@@ -313,7 +313,7 @@ Status: ${foldersResponse.status}`);
           let sheetNames = ['Sheet1', 'Sheet 1']; // fallback names
           try {
             const metadataResponse = await fetch(
-              `/api/sheets/spreadsheets/${file.id}`
+              `/api/sheets/metadata?spreadsheetId=${file.id}`
             );
 
             if (!metadataResponse.ok) {
@@ -386,7 +386,7 @@ Status: ${foldersResponse.status}`);
           for (const sheetName of sheetNames) {
             try {
               const sheetsResponse = await fetch(
-                `/api/sheets/spreadsheets/${file.id}/values/${sheetName}`
+                `/api/sheets/values?spreadsheetId=${file.id}&range=${encodeURIComponent(sheetName)}`
               );
 
               console.log(
