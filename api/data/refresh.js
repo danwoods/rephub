@@ -1,4 +1,5 @@
 const { google } = require('googleapis');
+const { parseFrontmatter } = require('../utils/frontmatter');
 
 // In-memory cache for Vercel functions (will reset on cold starts)
 let cache = {
@@ -116,9 +117,14 @@ const fetchSongsFromDrive = async () => {
             });
           });
 
+          // Parse frontmatter from the content
+          const { frontmatter, content } = parseFrontmatter(contentResponse.data);
+          
           songs[folder.name] = {
-            title: folder.name,
-            content: contentResponse.data
+            title: frontmatter.title || folder.name,
+            content: contentResponse.data,
+            // Include parsed metadata
+            ...frontmatter
           };
         }
       } catch (folderError) {

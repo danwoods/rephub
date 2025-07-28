@@ -7,6 +7,7 @@ A modern React web application for managing music repertoire and setlists with G
 ✅ **Google Drive API Integration**: Fetches real data from your folders  
 ✅ **React Router**: Clean navigation between songs and setlists  
 ✅ **Markdown Rendering**: Full markdown-it-chords integration  
+✅ **Frontmatter Parsing**: Automatic extraction of song metadata (key, BPM, etc.)  
 ✅ **Performance Mode**: iPad-optimized full-screen view  
 ✅ **Tailwind CSS**: Modern, responsive design  
 ✅ **Enhanced Caching System**: React Query-style multi-layer caching  
@@ -70,13 +71,33 @@ RepHub features a sophisticated **React Query-style caching system** with multip
 ### Response Format
 ```json
 {
-  "songs": { /* song data */ },
+  "songs": { /* song data with frontmatter metadata */ },
   "setlists": { /* setlist data */ },
   "cached": true,
   "lastFetch": 1703123456789,
   "error": "optional error message"
 }
 ```
+
+### Song Data Format
+Songs now include parsed frontmatter metadata:
+```json
+{
+  "amazing_grace": {
+    "title": "Amazing Grace",
+    "content": "---\ntitle = \"Amazing Grace\"\nkey = \"G\"\nbpm = 90\n---\n\n[G]Amazing grace...",
+    "key": "G",
+    "bpm": 90
+  }
+}
+```
+
+**Supported frontmatter fields:**
+- `title` - Song title (string)
+- `key` - Musical key (string)
+- `bpm` - Beats per minute (number)
+- `tempo` - Alternative tempo field (number)
+- Any other custom fields you add to frontmatter
 
 ### Cache Status Indicators
 The app displays real-time cache status:
@@ -166,19 +187,38 @@ To get folder IDs:
 
 ### 6. Song File Format
 
-Each `README.md` should follow this format:
+Each `README.md` should follow this format with **frontmatter metadata**:
 
 ```markdown
 ---
 title = "Amazing Grace"
 key = "G"
-tempo = "120"
+bpm = 90
 ---
 
 [G]Amazing grace, how [D]sweet the [G]sound\\
 That saved a wretch like [D]me\\
 I once was lost, but [G]now I'm [D]found\\
 Was blind, but [G]now I [D]see\\
+```
+
+**Frontmatter Features:**
+- **Automatic parsing**: Server extracts metadata and includes it in API responses
+- **Multiple formats**: Supports both `---` (YAML-style) and `+++` (TOML-style) delimiters
+- **Type conversion**: Numbers are parsed as integers/floats, strings can be quoted or unquoted
+- **Custom fields**: Add any metadata you need (artist, genre, capo, etc.)
+
+**Example with all supported features:**
+```markdown
+---
+title = "Custom Song"
+key = "Am"
+bpm = 120
+capo = 2
+genre = "Folk"
+---
+
+Your song content here...
 ```
 
 ### 7. Run the Application
@@ -287,6 +327,7 @@ src/
 ✅ **Google Drive API Integration**: Fetches real data from your folders  
 ✅ **Routing**: Clean navigation between songs and setlists  
 ✅ **Markdown Rendering**: Full markdown-it-chords integration  
+✅ **Frontmatter Parsing**: Automatic extraction of song metadata (key, BPM, etc.)  
 ✅ **Performance Mode**: iPad-optimized full-screen view  
 ✅ **Enhanced Caching System**: React Query-style multi-layer caching with instant loading  
 ✅ **Offline Capability**: Full functionality without internet connection  

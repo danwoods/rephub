@@ -1,6 +1,7 @@
 const express = require('express');
 const path = require('path');
 const { google } = require('googleapis');
+const { parseFrontmatter } = require('./api/utils/frontmatter');
 
 const app = express();
 const PORT = 3000; // Back to original port
@@ -74,9 +75,14 @@ const fetchSongsFromDrive = async () => {
             });
           });
 
+          // Parse frontmatter from the content
+          const { frontmatter, content } = parseFrontmatter(contentResponse.data);
+          
           songs[folder.name] = {
-            title: folder.name,
-            content: contentResponse.data
+            title: frontmatter.title || folder.name,
+            content: contentResponse.data,
+            // Include parsed metadata
+            ...frontmatter
           };
         }
       } catch (folderError) {
@@ -556,9 +562,14 @@ app.get('/api/drive/batch-songs', async (req, res) => {
             });
           });
           
+          // Parse frontmatter from the content
+          const { frontmatter, content } = parseFrontmatter(contentResponse.data);
+          
           songs[folderName] = {
-            title: folderName, // Will be updated by frontend parsing
-            content: contentResponse.data
+            title: frontmatter.title || folderName,
+            content: contentResponse.data,
+            // Include parsed metadata
+            ...frontmatter
           };
           
           console.log(`Successfully fetched song: ${folderName}`);
