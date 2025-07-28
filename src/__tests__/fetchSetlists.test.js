@@ -146,6 +146,10 @@ describe('fetchSetlistsFromDrive - Multi-Sheet API Integration', () => {
     google.drive.mockReturnValue(mockDrive);
     google.sheets.mockReturnValue(mockSheets);
 
+    // Configure the mock wrapper functions to properly return the mocked responses
+    mockRateLimitedRequest.mockImplementation((fn) => fn());
+    mockRetryWithBackoff.mockImplementation((fn) => fn());
+
     fetchSetlistsFromDrive = createMockFetchSetlistsFromDrive(
       mockDrive,
       mockSheets
