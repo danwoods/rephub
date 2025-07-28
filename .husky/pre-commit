@@ -1,0 +1,9 @@
+echo "🔒 MANDATORY QUALITY CHECKS - Running pre-commit validation..."
+echo "   → ESLint + Prettier + Tests for changed files"
+
+# Exit immediately if any command fails
+set -e
+
+npm run pre-commit
+
+echo "✅ All quality checks passed! Commit proceeding..."

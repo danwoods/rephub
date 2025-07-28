@@ -1,0 +1,10 @@
+echo "🔒 MANDATORY FULL VALIDATION - Running pre-push checks..."
+echo "   → Full test suite with coverage"
+echo "   → Build verification"
+
+# Exit immediately if any command fails
+set -e
+
+npm run pre-push
+
+echo "✅ All tests and builds passed! Push proceeding..." 
