@@ -7,8 +7,14 @@ import App from '../App';
 jest.mock('../hooks/useGoogleDrive', () => ({
   useGoogleDrive: () => ({
     songs: {
-      'test-song-1': { title: 'Test Song 1', key: 'C' },
-      'test-song-2': { title: 'Test Song 2', key: 'G' },
+      'test-song-1': {
+        title: 'Test Song 1',
+        content: '# Test Song 1\n\nKey: C\n\nTest song content',
+      },
+      'test-song-2': {
+        title: 'Test Song 2',
+        content: '# Test Song 2\n\nKey: G\n\nTest song content',
+      },
     },
     setlists: {},
     loading: false,
