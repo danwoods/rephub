@@ -97,24 +97,57 @@ export default async function handler(req, res) {
     if (params.length === 1) {
       console.log('Sheets API metadata request:', { spreadsheetId });
       
-      const response = await rateLimitedRequest(async () => {
-        return await retryWithBackoff(async () => {
-          return await sheets.spreadsheets.get({
-            spreadsheetId: spreadsheetId,
-            fields: 'properties,sheets.properties'
+      try {
+        const response = await rateLimitedRequest(async () => {
+          return await retryWithBackoff(async () => {
+            return await sheets.spreadsheets.get({
+              spreadsheetId: spreadsheetId,
+              fields: 'properties,sheets.properties'
+            });
           });
         });
-      });
-      
-      console.log('Sheets API metadata response:', response.data);
-      
-      if (response.data && typeof response.data === 'object') {
-        res.json(response.data);
-      } else {
-        console.error('Invalid metadata response data type:', typeof response.data);
-        res.status(500).json({ error: 'Invalid response from Google Sheets API' });
+        
+        console.log('Sheets API metadata response status:', response.status);
+        console.log('Sheets API metadata response data type:', typeof response.data);
+        console.log('Sheets API metadata response:', JSON.stringify(response.data).substring(0, 200) + '...');
+        
+        if (response.data && typeof response.data === 'object') {
+          res.json(response.data);
+        } else {
+          console.error('Invalid metadata response data type:', typeof response.data);
+          console.error('Raw metadata response:', response.data);
+          res.status(500).json({ error: 'Invalid response from Google Sheets API' });
+        }
+        return;
+      } catch (metadataError) {
+        console.error('Metadata request error:', metadataError.message);
+        console.error('Metadata request error details:', metadataError);
+        
+        let errorMessage = metadataError.message;
+        let statusCode = 500;
+        
+        if (metadataError.message.includes('automated queries')) {
+          errorMessage = 'Google detected automated queries. Please try again later.';
+          statusCode = 429;
+        } else if (metadataError.message.includes('rate limit')) {
+          errorMessage = 'Rate limit exceeded. Please try again later.';
+          statusCode = 429;
+        } else if (metadataError.message.includes('permission') || metadataError.message.includes('forbidden')) {
+          errorMessage = 'Permission denied. Check API key and spreadsheet permissions.';
+          statusCode = 403;
+        } else if (metadataError.message.includes('not found')) {
+          errorMessage = 'Spreadsheet not found. Check the spreadsheet ID.';
+          statusCode = 404;
+        }
+        
+        res.status(statusCode).json({ 
+          error: errorMessage,
+          details: process.env.NODE_ENV === 'development' ? metadataError.message : undefined,
+          spreadsheetId: spreadsheetId,
+          requestType: 'metadata'
+        });
+        return;
       }
-      return;
     }
     
     // Parse the route for values: /api/sheets/spreadsheets/{spreadsheetId}/values/{range}

@@ -353,7 +353,27 @@ Status: ${foldersResponse.status}`);
                 `Error parsing metadata for ${file.name}:`,
                 parseError
               );
-              continue; // Skip this spreadsheet
+              console.error(
+                `Metadata response content (first 200 chars):`,
+                metadataText.substring(0, 200) + '...'
+              );
+
+              // Check if it's an HTML error page from Google
+              if (
+                metadataText.includes('<!doctype html>') ||
+                metadataText.includes('<html>')
+              ) {
+                console.error(
+                  'Metadata request returned HTML instead of JSON - likely a Google API error or rate limiting'
+                );
+                console.log(`Skipping ${file.name} due to metadata API error`);
+                continue; // Skip this spreadsheet
+              }
+
+              // If not HTML, use fallback sheet names and continue
+              console.log(
+                `Using fallback sheet names for ${file.name} due to metadata parsing error`
+              );
             }
           } catch (metadataError) {
             console.error(
