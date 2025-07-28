@@ -80,16 +80,36 @@ This document provides an overview of the current test coverage for the RepHub a
 
 ### 5. Hook Tests
 
-#### Google Drive Hook - Setlists (`src/hooks/__tests__/useGoogleDrive.setlists.test.js`)
+#### Google Drive Hook - Enhanced Setlists (`src/hooks/__tests__/useGoogleDrive.setlists.test.js`)
 **Status**: ✅ Comprehensive  
-**Coverage**: Setlist-specific functionality
+**Coverage**: Multi-sheet setlist functionality with dynamic discovery
+
+**🆕 Enhanced Features**:
+- **Multi-sheet support**: Each sheet becomes a separate setlist
+- **Dynamic sheet discovery**: Uses Google Sheets API metadata to find all sheets
+- **Smart naming conventions**: Single sheet vs multi-sheet naming
+- **Any sheet names**: No longer limited to hardcoded names
 
 **Tests Include**:
-- Setlist fetching flow with metadata-driven sheet names
-- Multiple file processing and error handling
-- Sheet name fallback strategy ('Sheet1', 'Setlist', filename)
-- Data transformation and parsing
-- Error recovery and graceful degradation
+- Single sheet spreadsheets with clean naming (e.g., "Jazz Standards")
+- Multi-sheet spreadsheets with compound naming (e.g., "Wedding Music - Ceremony")
+- Mixed scenarios with both single and multi-sheet spreadsheets
+- Empty spreadsheet handling and partial failure recovery
+- Cached multi-sheet data workflows
+- Error recovery and graceful degradation for individual sheets
+
+#### API Integration Tests (`api/data/__tests__/fetchSetlists.test.js`)
+**Status**: ✅ Comprehensive  
+**Coverage**: fetchSetlistsFromDrive function multi-sheet integration testing
+
+**Tests Include**:
+- Single sheet spreadsheets with Google Sheets API metadata calls
+- Multi-sheet spreadsheets with multiple API calls per file
+- Mixed single/multi-sheet scenarios in the same folder
+- Empty sheet handling and skipping logic
+- Individual sheet error recovery (continues processing other sheets)
+- Spreadsheet-level error recovery (continues processing other files)
+- Complete API call flow with mocked Google Drive and Sheets APIs
 
 ### 6. Enhanced Caching System Tests
 

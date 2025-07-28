@@ -186,10 +186,23 @@ const fetchSetlistsFromDrive = async () => {
 
     for (const file of files) {
       try {
-        // Try common sheet names
-        const sheetNames = ['Sheet1', 'Setlist', file.name, 'Songs'];
+        // First, get metadata to discover all sheets in this spreadsheet
+        const metadataResponse = await rateLimitedRequest(async () => {
+          return await retryWithBackoff(async () => {
+            return await sheets.spreadsheets.get({
+              spreadsheetId: file.id,
+              fields: 'properties,sheets.properties'
+            });
+          });
+        });
+
+        const spreadsheetMetadata = metadataResponse.data;
+        const sheetsList = spreadsheetMetadata.sheets || [];
         
-        for (const sheetName of sheetNames) {
+        // Process each sheet in the spreadsheet
+        for (const sheet of sheetsList) {
+          const sheetName = sheet.properties.title;
+          
           try {
             const valuesResponse = await rateLimitedRequest(async () => {
               return await retryWithBackoff(async () => {
@@ -202,14 +215,21 @@ const fetchSetlistsFromDrive = async () => {
 
             const rows = valuesResponse.data.values || [];
             if (rows.length > 0) {
-              setlists[file.name] = {
-                name: file.name,
+              // Create a meaningful setlist name
+              // If there's only one sheet, use just the file name
+              // If multiple sheets, use "FileName - SheetName" format
+              const setlistName = sheetsList.length === 1 ? 
+                file.name : 
+                `${file.name} - ${sheetName}`;
+              
+              setlists[setlistName] = {
+                name: setlistName,
                 songs: rows.flat().filter(cell => cell && cell.trim())
               };
-              break; // Found valid sheet, move to next file
             }
           } catch (sheetError) {
-            continue; // Try next sheet name
+            console.error(`Error processing sheet "${sheetName}" in file "${file.name}":`, sheetError);
+            continue; // Try next sheet
           }
         }
       } catch (fileError) {

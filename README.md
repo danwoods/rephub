@@ -158,13 +158,27 @@ GOOGLE_API_KEY=your_actual_api_key_here
   ```
 
 **Setlists Folder:**
-- Contains Google Sheets files
-- First column (A) contains song titles
-- Example:
+- Contains Google Sheets files with **multi-sheet support**
+- Each sheet/tab becomes a separate setlist
+- Song titles can be in any column/cell (reads entire sheet range A:Z)
+
+**🆕 Multi-Sheet Support:**
+- **Single Sheet**: Uses spreadsheet name (e.g., "Summer Concert")
+- **Multiple Sheets**: Uses "Spreadsheet - Sheet" format (e.g., "Wedding - Ceremony", "Wedding - Reception")
+- **Any Sheet Names**: No longer limited to specific names - use whatever you want!
+
+- Example structure:
   ```
   setlists/
   ├── Summer Concert (Google Sheet)
-  └── Winter Show (Google Sheet)
+  │   └── Sheet1 → "Summer Concert" setlist
+  ├── Wedding Music (Google Sheet)
+  │   ├── Ceremony → "Wedding Music - Ceremony" setlist
+  │   ├── Reception → "Wedding Music - Reception" setlist
+  │   └── Cocktail Hour → "Wedding Music - Cocktail Hour" setlist
+  └── Jazz Standards (Google Sheet)
+      ├── Ballads → "Jazz Standards - Ballads" setlist
+      └── Up Tempo → "Jazz Standards - Up Tempo" setlist
   ```
 
 ### 5. Update Folder IDs
