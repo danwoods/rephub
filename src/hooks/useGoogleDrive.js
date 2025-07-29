@@ -49,12 +49,54 @@ export function useGoogleDrive() {
   // Main data loading function - React Query style
   const loadData = useCallback(
     async (forceRefresh = false) => {
-      console.log('loadData called', { forceRefresh, isOnline });
+      // Development mode - use mock data for now
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Using development mock data');
+
+        // Clear any existing cache in development
+        if (typeof localStorage !== 'undefined') {
+          localStorage.removeItem('rephub-cached-data');
+        }
+
+        const mockData = {
+          songs: {
+            sugaree: { title: 'Sugaree', key: 'C' },
+            'stir-it-up': { title: 'Stir It Up', key: 'G' },
+            'franklins-tower': { title: "Franklin's Tower", key: 'D' },
+            'going-down-the-road': {
+              title: 'Going Down the Road Feeling Bad',
+              key: 'E',
+            },
+          },
+          setlists: {
+            2025: {
+              name: '2025',
+              songs: [
+                'Sugaree',
+                'Stir It Up',
+                "Franklin's Tower",
+                'Going Down the Road Feeling Bad',
+              ],
+            },
+            'Test Setlist': {
+              name: 'Test Setlist',
+              songs: ['Sugaree', 'Stir It Up'],
+            },
+          },
+          timestamp: Date.now(),
+          lastFetch: Date.now(),
+        };
+
+        setSongs(mockData.songs);
+        setSetlists(mockData.setlists);
+        setLastFetch(mockData.lastFetch);
+        setLoading(false);
+        return;
+      }
 
       // Always show cached data immediately if available
       const cachedData = loadCachedData();
       if (cachedData && (cachedData.songs || cachedData.setlists)) {
-        console.log('Showing cached data immediately');
         setSongs(cachedData.songs);
         setSetlists(cachedData.setlists);
         setLastFetch(cachedData.lastFetch);
@@ -63,7 +105,6 @@ export function useGoogleDrive() {
 
       // If offline, only use cached data
       if (!isOnline) {
-        console.log('Offline - using cached data only');
         if (!cachedData) {
           setError('No cached data available offline');
           setLoading(false);
@@ -75,7 +116,6 @@ export function useGoogleDrive() {
       if (!forceRefresh && cachedData && cachedData.timestamp) {
         const age = Date.now() - cachedData.timestamp;
         if (age < CONFIG.cacheExpiry) {
-          console.log('Using recent cached data, skipping server request');
           setLoading(false);
           return;
         }
@@ -112,25 +152,15 @@ export function useGoogleDrive() {
 
         // Handle server errors while still showing data
         if (serverData.error) {
-          console.warn(
-            'Server had errors but returned cached data:',
-            serverData.error
-          );
           setError(`Warning: ${serverData.error} (showing cached data)`);
         } else {
           setError(null);
         }
-
-        console.log('Data loaded successfully from server');
       } catch (serverError) {
-        console.error('Server fetch failed:', serverError);
-
         // If server fails but we have cached data, that's okay
         if (cachedData) {
-          console.log('Server failed but using cached data');
           setError(`Server unavailable (showing cached data)`);
         } else {
-          console.log('Server failed and no cached data available');
           setError(`Failed to load data: ${serverError.message}`);
         }
       } finally {
@@ -151,7 +181,6 @@ export function useGoogleDrive() {
     backgroundRefreshTimeoutRef.current = setTimeout(
       () => {
         if (isOnline && !isRefreshing) {
-          console.log('Background refresh triggered');
           loadData(false); // Background refresh, not forced
         }
       },
@@ -161,21 +190,18 @@ export function useGoogleDrive() {
 
   // Manual refresh function
   const refreshData = useCallback(() => {
-    console.log('Manual refresh requested');
     loadData(true);
   }, [loadData]);
 
   // Network status handling
   useEffect(() => {
     const handleOnline = () => {
-      console.log('Network back online');
       setIsOnline(true);
       // Automatically refresh when coming back online
       loadData(false);
     };
 
     const handleOffline = () => {
-      console.log('Network went offline');
       setIsOnline(false);
       setError('Offline - showing cached data');
     };

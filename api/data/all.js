@@ -106,7 +106,10 @@ const fetchSongsFromDrive = async () => {
     const folders = foldersResponse.data.files || [];
     const songs = {};
 
+    console.log(`Found ${folders.length} song folders`);
+
     for (const folder of folders) {
+      console.log(`Processing song folder: "${folder.name}"`);
       try {
         // Find README.md in this folder
         const readmeResponse = await rateLimitedRequest(async () => {
@@ -140,6 +143,10 @@ const fetchSongsFromDrive = async () => {
             // Include parsed metadata
             ...frontmatter
           };
+          
+          console.log(`✅ Loaded song: "${frontmatter.title || folder.name}" from folder "${folder.name}"`);
+        } else {
+          console.log(`⚠️ No README.md found in folder "${folder.name}"`);
         }
       } catch (folderError) {
         console.error(`Error processing folder ${folder.name}:`, folderError);
@@ -184,7 +191,10 @@ const fetchSetlistsFromDrive = async () => {
     const files = filesResponse.data.files || [];
     const setlists = {};
 
+    console.log(`Found ${files.length} setlist spreadsheets`);
+
     for (const file of files) {
+      console.log(`Processing setlist file: "${file.name}"`);
       try {
         // First, get metadata to discover all sheets in this spreadsheet
         const metadataResponse = await rateLimitedRequest(async () => {
@@ -226,6 +236,8 @@ const fetchSetlistsFromDrive = async () => {
                 name: setlistName,
                 songs: rows.flat().filter(cell => cell && cell.trim())
               };
+              
+              console.log(`✅ Created setlist "${setlistName}" with ${setlists[setlistName].songs.length} songs:`, setlists[setlistName].songs);
             }
           } catch (sheetError) {
             console.error(`Error processing sheet "${sheetName}" in file "${file.name}":`, sheetError);
@@ -237,6 +249,7 @@ const fetchSetlistsFromDrive = async () => {
       }
     }
 
+    console.log('Setlists fetched:', Object.keys(setlists).map(name => `${name}: ${setlists[name].songs.length} songs`));
     return setlists;
   } catch (error) {
     console.error('Error fetching setlists:', error);
